@@ -96,20 +96,103 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
 
 // Hangman display and panic title
 fn get_hangman_widget(app: &App) -> Paragraph {
-    let bad_guesses = app.get_bad_guess_amount();
-
-    let stages = vec![
-        "       \n       \n       \n       \n       ",
-        "       \n   |   \n   |   \n   |   \n_______",
-        "   +---+\n   |   \n       \n       \n_______",
-        "   +---+\n   |   \n   O   \n       \n_______",
-        "   +---+\n   |   \n   O   \n   |   \n_______",
-        "   +---+\n   |   \n   O   \n  /|   \n_______",
-        "   +---+\n   |   \n   O   \n  /|\\ \n_______",
-        "   +---+\n   |   \n   O   \n  /|\\ \n  /    ",
-        "   +---+\n   |   \n   O   \n  /|\\ \n  / \\ ",
-        "   +---+\n   |   \n   O   \n  /|\\ \n  / \\ ",
+    // ASCII frames with consistent dimensions (7 lines tall)
+    const FRAMES: [&str; 10] = [
+        // Frame 0 - empty gallows
+        r#"
++---+
+|  |
+|
+|
+|
+|
+========="#,
+        // Frame 1 - head
+        r#"
++---+
+|  |
+|  o
+|
+|
+|
+========="#,
+        // Frame 2 - head + torso
+        r#"
++---+
+|  |
+|  o
+|  |
+|
+|
+========="#,
+        // Frame 3 - head + torso + left arm
+        r#"
+   +---+
+|  |
+|  o
+| /|
+|
+|
+========="#,
+        // Frame 4 - head + torso + both arms
+        r#"
++---+
+|  | 
+|  o
+| /|\
+|
+|
+========="#,
+        // Frame 5 - head + torso + both arms + left leg
+        r#"
++---+
+|  |
+|  o
+| /|\
+| /
+|
+========="#,
+        // Frame 6 - complete body
+        r#"
++---+
+|  |
+|  o
+| /|\
+| / \
+|
+========="#,
+        // Frame 7 - face details
+        r#"
++---+
+|   |
+|  (o)
+|  /|\
+|  / \
+|
+========="#,
+        // Frame 8 - dead eyes
+        r#"
++---+
+|   |
+|  (x)
+|  /|\
+|  / \
+|
+========="#,
+        // Frame 9 - final dead posture
+        r#"
++---+
+|   |   
+|  (x)
+| _/|\_
+|  / \
+|
+========="#,
     ];
+
+    let bad_guesses = app.get_bad_guess_amount();
+    let frame_index = bad_guesses.min(9) as usize;
+    let drawing = FRAMES[frame_index].trim_start(); // Trim leading newline
 
     let title = match bad_guesses {
         0..=2 => "ewajaaa fucking chillings hiero bij die galg tent, ga zo biertje halen denk ik",
@@ -119,15 +202,10 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         _ => "doei druif",
     };
 
-    let drawing = stages
-        .get(bad_guesses as usize)
-        .unwrap_or(&stages.last().unwrap());
-
-    Paragraph::new(*drawing)
+    Paragraph::new(drawing)
         .block(Block::default().borders(Borders::ALL).title(title))
         .wrap(Wrap { trim: true })
 }
-
 // Utility function to center the popup
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
