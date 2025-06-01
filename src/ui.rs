@@ -196,6 +196,7 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         .block(Block::default().borders(Borders::ALL).title(title))
         .wrap(Wrap { trim: true })
 }
+
 // Utility function to center the popup
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
@@ -216,12 +217,15 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         ])
         .split(popup_layout[1])[1]
 }
+
 fn render_current_word_progress(app: &App, frame: &mut Frame, area: Rect) {
     let display: String = app
         .word_to_guess
         .chars()
         .map(|c| {
-            if app.used_characters.contains(&c) {
+            if c == ' ' {
+                "  ".to_string() // double space for better visual gap
+            } else if app.used_characters.contains(&c) {
                 format!("{} ", c)
             } else {
                 "_ ".to_string()
@@ -230,11 +234,8 @@ fn render_current_word_progress(app: &App, frame: &mut Frame, area: Rect) {
         .collect();
 
     frame.render_widget(
-        Paragraph::new(display.trim_end()).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("het woord iss...."),
-        ),
+        Paragraph::new(display.trim_end())
+            .block(Block::default().borders(Borders::ALL).title("Woord")),
         area,
     );
 }

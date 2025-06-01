@@ -32,12 +32,14 @@ impl App {
 
                     if self.word_to_guess.contains(c) {
                         self.guess_input.push(c);
-                        // Check if all characters in the word have been guessed
-                        if self
+
+                        let all_guessed = self
                             .word_to_guess
                             .chars()
-                            .all(|wc| self.guess_input.contains(wc))
-                        {
+                            .filter(|ch| *ch != ' ')
+                            .all(|ch| self.used_characters.contains(&ch));
+
+                        if all_guessed {
                             self.has_won = true;
                             self.game_finished = true;
                         }
@@ -55,7 +57,6 @@ impl App {
             }
         }
     }
-
     pub fn get_bad_guess_amount(&self) -> u32 {
         self.used_characters
             .iter()
@@ -75,7 +76,7 @@ impl App {
             "knuffel",
             "zomer",
             "regenboog",
-            "humbertotan",
+            "humberto tan",
             "jelmer",
             "snorfbokkel",
             "guppie",
@@ -88,6 +89,18 @@ impl App {
             "chocola",
             "bier",
             "snoepje",
+            "prinses",
+            "tiara",
+            "soepje",
+            "jammie",
+            "bami",
+            "simsen",
+            "zuipen",
+            "beerenburg",
+            "friesland",
+            "susan is stinky",
+            "stinky",
+            "negerzoen",
         ];
 
         let mut rng = thread_rng();
