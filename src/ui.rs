@@ -5,7 +5,7 @@ use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 pub fn ui(frame: &mut Frame, app: &App) {
     frame.render_widget(
         Block::default()
-            .title("Jelmers galgje voor Susan :o <3")
+            .title("Jelmers galgje voor Susan :o <3 (ESC om af te sluiten)")
             .borders(Borders::all()),
         frame.area(),
     );
@@ -47,25 +47,9 @@ pub fn ui(frame: &mut Frame, app: &App) {
     render_current_word_progress(app, frame, chunks[1]);
 
     // Game body: left (hangman) and right (word reveal)
-    frame.render_widget(get_hangman_widget(app), middle_chunks[0]);
-    show_results(app, frame, middle_chunks[1]);
+    frame.render_widget(get_hangman_widget(app), chunks[2]);
 
     show_end_game_popup(app, frame);
-}
-
-fn show_results(app: &App, frame: &mut Frame, area: Rect) {
-    if app.game_finished {
-        frame.render_widget(
-            Paragraph::new(app.word_to_guess.clone())
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title("Het woord was:"),
-                )
-                .wrap(Wrap { trim: true }),
-            area,
-        );
-    }
 }
 
 fn show_end_game_popup(app: &App, frame: &mut Frame) {
@@ -78,12 +62,18 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
     let (title, message) = if app.has_won {
         (
             "joepie de poepie!",
-            "mulder de eindbaas heeft het weer voor elkaar! 🥳\n\nDruk op 'R' om opnieuw te starten.",
+            format!(
+                "mulder de eindbaas heeft het weer voor elkaar! 🥳\n\nDruk op 'R' om opnieuw te starten. \n \nHet woord was: {}",
+                app.word_to_guess.clone()
+            ),
         )
     } else {
         (
             "loserrrr",
-            "tsjongejonge, wie had dat nou weer verwacht 😢\n\nDruk op 'R' om opnieuw te starten.",
+            format!(
+                "tsjongejonge, wie had dat nou weer verwacht 😢\n\nDruk op 'R' om opnieuw te starten.\n\nHet woord was: {}",
+                app.word_to_guess.clone()
+            ),
         )
     };
 
