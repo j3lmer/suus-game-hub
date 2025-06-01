@@ -76,24 +76,24 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
     let popuparea = centered_rect(60, 40, frame.area());
 
     let (title, message) = if app.has_won {
-        ("joepie de poepie!", "pipi de meester gokker!! 🥳")
+        (
+            "joepie de poepie!",
+            "mulder de eindbaas heeft het weer voor elkaar! 🥳\n\nDruk op 'R' om opnieuw te starten.",
+        )
     } else {
-        ("womp womp!", "fucking noob. 😢")
+        (
+            "loserrrr",
+            "tsjongejonge, wie had dat nou weer verwacht 😢\n\nDruk op 'R' om opnieuw te starten.",
+        )
     };
 
     frame.render_widget(
         Paragraph::new(message)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(title)
-                    .style(Style::default().bg(Color::Magenta)),
-            )
+            .block(Block::default().borders(Borders::ALL).title(title))
             .wrap(Wrap { trim: true }),
         popuparea,
     );
 }
-
 // Hangman display and panic title
 fn get_hangman_widget(app: &App) -> Paragraph {
     // ASCII frames with consistent dimensions (7 lines tall)

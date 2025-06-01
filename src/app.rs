@@ -16,7 +16,11 @@ impl App {
     }
 
     pub fn handle_user_press(&mut self, key: KeyCode) {
+        // Allow restarting the game when it's finished
         if self.game_finished {
+            if let KeyCode::Char('r') | KeyCode::Char('R') = key {
+                *self = App::new(); // reset the game
+            }
             return;
         }
 
