@@ -1,14 +1,16 @@
 use crate::App;
+
+use colorgrad::Gradient;
+use colorgrad::GradientBuilder;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use tui_gradient_block::gradient_block::GradientBlock;
+use tui_gradient_block::types::G;
+use tui_rule::{create_raw_spans, generate_gradient_text};
 
 pub fn ui(frame: &mut Frame, app: &App) {
-    frame.render_widget(
-        Block::default()
-            .title("Jelmers galgje voor Susan :o <3 (ESC om af te sluiten)")
-            .borders(Borders::all()),
-        frame.area(),
-    );
+    let block = get_gradient_block("💖 Jelmers galgje voor Susan :o <3 (ESC om af te sluiten) 💖");
+    frame.render_widget(block, frame.area());
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -37,7 +39,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Gebruikte letters"),
+                .title("✨ Gebruikte letters ✨"),
         )
         .wrap(Wrap { trim: true }),
         top_chunks[0],
@@ -49,7 +51,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Aantal pogingen"),
+                    .title("💌 Aantal pogingen 💌"),
             )
             .wrap(Wrap { trim: true }),
         top_chunks[1],
@@ -73,7 +75,7 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
 
     let (title, message) = if app.has_won {
         (
-            "joepie de poepie!",
+            "🎉 joepie de poepie!",
             format!(
                 "mulder de eindbaas heeft het weer voor elkaar! 🥳\n\nDruk op 'R' om opnieuw te starten. \n \nHet woord was: {}",
                 app.word_to_guess.clone()
@@ -81,9 +83,9 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
         )
     } else {
         (
-            "loserrrr",
+            "💀 loserrrr",
             format!(
-                "tsjongejonge, wie had dat nou weer verwacht 😢\n\nDruk op 'R' om opnieuw te starten.\n\nHet woord was: {}",
+                " tsjongejonge, wie had dat nou weer verwacht 😢\n\nDruk op 'R' om opnieuw te starten.\n\nHet woord was: {}",
                 app.word_to_guess.clone()
             ),
         )
@@ -103,7 +105,7 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         // Frame 0 - empty gallows
         r#"
 +---+
-|  |
+|   |
 |
 |
 |
@@ -112,8 +114,8 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         // Frame 1 - head
         r#"
 +---+
-|  |
-|  o
+|   |
+|   o
 |
 |
 |
@@ -121,46 +123,46 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         // Frame 2 - head + torso
         r#"
 +---+
-|  |
-|  o
-|  |
+|   |
+|   o
+|   |
 |
 |
 ========="#,
         // Frame 3 - head + torso + left arm
         r#"
    +---+
-|  |
-|  o
-| /|
+|   |
+|   o
+|  /|
 |
 |
 ========="#,
         // Frame 4 - head + torso + both arms
         r#"
 +---+
-|  | 
-|  o
-| /|\
+|   | 
+|   o
+|  /|\
 |
 |
 ========="#,
         // Frame 5 - head + torso + both arms + left leg
         r#"
 +---+
-|  |
-|  o
-| /|\
-| /
+|   |
+|   o
+|  /|\
+|  /
 |
 ========="#,
         // Frame 6 - complete body
         r#"
 +---+
-|  |
-|  o
-| /|\
-| / \
+|   |
+|   o
+|  /|\
+|  / \
 |
 ========="#,
         // Frame 7 - face details
@@ -247,7 +249,54 @@ fn render_current_word_progress(app: &App, frame: &mut Frame, area: Rect) {
 
     frame.render_widget(
         Paragraph::new(display.trim_end())
-            .block(Block::default().borders(Borders::ALL).title("Woord")),
+            .block(Block::default().borders(Borders::ALL).title("🌸 Woord 🌸")),
         area,
     );
+}
+
+fn pastel(col: (u8, u8, u8)) -> G {
+    Box::new(
+        GradientBuilder::new()
+            .colors(&[colorgrad::Color::from_rgba8(col.0, col.1, col.2, 255)])
+            .build::<colorgrad::LinearGradient>()
+            .unwrap(),
+    )
+}
+
+fn get_gradient_block(title_text: &str) -> GradientBlock<'_> {
+    GradientBlock::new()
+        .left_gradient(pastel((255, 179, 186))) // pastel pink
+        .bottom_gradient(pastel((186, 225, 255))) // pastel blue
+        .top_gradient(Box::new(
+            GradientBuilder::new()
+                .colors(&[
+                    colorgrad::Color::from_rgba8(255, 223, 186, 255),
+                    colorgrad::Color::from_rgba8(255, 179, 186, 255),
+                    colorgrad::Color::from_rgba8(186, 225, 255, 255),
+                ])
+                .build::<colorgrad::LinearGradient>()
+                .unwrap(),
+        ))
+        .right_gradient(Box::new(
+            GradientBuilder::new()
+                .colors(&[
+                    colorgrad::Color::from_rgba8(186, 255, 201, 255),
+                    colorgrad::Color::from_rgba8(255, 255, 186, 255),
+                ])
+                .build::<colorgrad::LinearGradient>()
+                .unwrap(),
+        ))
+        .title_top(
+            Line::from(generate_gradient_text!(
+                title_text,
+                GradientBuilder::new()
+                    .colors(&[
+                        colorgrad::Color::from_rgba8(255, 153, 204, 255),
+                        colorgrad::Color::from_rgba8(204, 153, 255, 255)
+                    ])
+                    .build::<colorgrad::LinearGradient>()
+                    .unwrap()
+            ))
+            .centered(),
+        )
 }
