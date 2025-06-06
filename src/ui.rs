@@ -9,7 +9,9 @@ use tui_gradient_block::types::G;
 use tui_rule::{create_raw_spans, generate_gradient_text};
 
 pub fn ui(frame: &mut Frame, app: &App) {
-    let block = get_gradient_block("💖 Jelmers galgje voor Susan :o <3 (ESC om af te sluiten) 💖");
+    let block = get_gradient_block(
+        "💖 Jelmers galgje voor Susan :o <3 (ESC om af te sluiten | f5 om te herstarten) 💖",
+    );
     frame.render_widget(block, frame.area());
 
     let chunks = Layout::default()
@@ -22,66 +24,87 @@ pub fn ui(frame: &mut Frame, app: &App) {
         ])
         .split(frame.area());
 
-    let top_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[0]);
+    // Only render regular game elements if not in the 'all words exhausted' state.
+    // In the exhausted state, we only want the popup to be displayed.
+    if !app.all_words_exhausted {
+        let top_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(chunks[0]);
 
-    // Used letters
-    frame.render_widget(
-        Paragraph::new(
-            app.used_characters
-                .iter()
-                .map(|c| c.to_string())
-                .collect::<Vec<String>>()
-                .join(" - "),
-        )
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_set(symbols::border::ROUNDED)
-                .title(
-                    Line::from("✨ Gebruikte letters ✨")
-                        .style(Style::default().fg(Color::Magenta).bold()),
-                ),
-        )
-        .wrap(Wrap { trim: true }),
-        top_chunks[0],
-    );
-
-    // remaining guesses
-    frame.render_widget(
-        Paragraph::new((app.max_guesses - app.current_guess_index).to_string())
+        // Used letters
+        frame.render_widget(
+            Paragraph::new(
+                app.used_characters
+                    .iter()
+                    .map(|c| c.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" - "),
+            )
             .block(
                 Block::default()
                     .borders(Borders::ALL)
                     .border_set(symbols::border::ROUNDED)
                     .title(
-                        Line::from("💌 Aantal pogingen 💌")
-                            .style(Style::default().fg(Color::Cyan).bold()),
+                        Line::from("✨ Gebruikte letters ✨")
+                            .style(Style::default().fg(Color::Magenta).bold()),
                     ),
             )
             .wrap(Wrap { trim: true }),
-        top_chunks[1],
-    );
+            top_chunks[0],
+        );
 
-    // Word progress display
-    render_current_word_progress(app, frame, chunks[1]);
+        // remaining guesses
+        frame.render_widget(
+            Paragraph::new((app.max_guesses - app.current_guess_index).to_string())
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_set(symbols::border::ROUNDED)
+                        .title(
+                            Line::from("💌 Aantal pogingen 💌")
+                                .style(Style::default().fg(Color::Cyan).bold()),
+                        ),
+                )
+                .wrap(Wrap { trim: true }),
+            top_chunks[1],
+        );
 
-    // Game body: left (hangman) and right (word reveal)
-    frame.render_widget(get_hangman_widget(app), chunks[2]);
+        // Word progress display
+        render_current_word_progress(app, frame, chunks[1]);
 
+        // Game body: left (hangman) and right (word reveal)
+        frame.render_widget(get_hangman_widget(app), chunks[2]);
+    }
+
+    // Always try to show the popup if game is finished OR all words are exhausted.
     show_end_game_popup(app, frame);
 }
 
 fn show_end_game_popup(app: &App, frame: &mut Frame) {
-    if !app.game_finished {
+    // Only show the popup if the game is finished (win/loss) OR if all words are exhausted
+    if !app.game_finished && !app.all_words_exhausted {
         return;
     }
 
     let popuparea = centered_rect(60, 40, frame.area());
 
-    let (title, message_lines) = if app.has_won {
+    let (title, message_lines) = if app.all_words_exhausted {
+        // Specific end screen for when all unique words have been used
+        (
+            Line::from("💖 ALLE WOORDEN GERADEN! 💖")
+                .style(Style::default().fg(Color::Rgb(255, 192, 203)).bold()), // Light pink
+            vec![
+                Line::from("pipi heeft gewoon alle woorden gepakt wtf 🤩".to_string()),
+                Line::from(""),
+                Line::from("ewa tering lekker!").style(Style::default().italic()),
+                Line::from(""),
+                Line::from("Druk op 'R' om alle woorden opnieuw te starten.")
+                    .style(Style::default().fg(Color::LightYellow).bold().italic()),
+            ],
+        )
+    } else if app.has_won {
+        // Regular win screen
         (
             Line::from("🎉 joepie de poepie!")
                 .style(Style::default().fg(Color::Rgb(255, 105, 180)).bold()), // Hot pink
@@ -95,6 +118,7 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
             ],
         )
     } else {
+        // Regular loss screen
         (
             Line::from("💀 loserrrr").style(Style::default().fg(Color::LightRed).bold()),
             vec![
@@ -121,6 +145,7 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
         popuparea,
     );
 }
+
 // Hangman display and panic title
 fn get_hangman_widget(app: &App) -> Paragraph {
     // ASCII frames with consistent dimensions (7 lines tall)
@@ -164,7 +189,7 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         // Frame 4 - head + torso + both arms
         r#"
 +---+
-|   | 
+|   |
 |   o
 |  /|\
 |

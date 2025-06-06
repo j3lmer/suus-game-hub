@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Running
     let mut app = App::new();
+    app.start_new_game();
     run_app(&mut terminal, &mut app)?;
 
     //Nazorg
@@ -54,7 +55,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<bool
             if KeyEventKind::Press == key.kind {
                 match key.code {
                     KeyCode::Esc => return Ok(true),
-
+                    KeyCode::F(5) => app.start_new_game(),
                     _ => {
                         app.handle_user_press(key.code);
                     }
