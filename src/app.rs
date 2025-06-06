@@ -107,6 +107,7 @@ impl App {
             "hakenkruis",
             "apenstaartje",
             "paprika",
+            "bananenvla",
         ];
 
         let mut rng = thread_rng();
