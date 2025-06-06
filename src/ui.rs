@@ -3,7 +3,7 @@ use crate::App;
 use colorgrad::Gradient;
 use colorgrad::GradientBuilder;
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::widgets::{Block, Borders, Gauge, Paragraph, Wrap}; // Import Gauge
 use tui_gradient_block::gradient_block::GradientBlock;
 use tui_gradient_block::types::G;
 use tui_rule::{create_raw_spans, generate_gradient_text};
@@ -14,23 +14,26 @@ pub fn ui(frame: &mut Frame, app: &App) {
     );
     frame.render_widget(block, frame.area());
 
-    let chunks = Layout::default()
+    let main_chunks = Layout::default() // Changed to main_chunks for clarity
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(3), // used letters
+            Constraint::Length(3), // used letters & panic meter top part
             Constraint::Length(3), // word progress
-            Constraint::Min(1),    // game
+            Constraint::Min(1),    // game (hangman)
         ])
         .split(frame.area());
 
-    // Only render regular game elements if not in the 'all words exhausted' state.
-    // In the exhausted state, we only want the popup to be displayed.
+    // Only render game elements if not in the 'all words exhausted' state
     if !app.all_words_exhausted {
-        let top_chunks = Layout::default()
+        let top_horizontal_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(chunks[0]);
+            .constraints([
+                Constraint::Percentage(50), // Used letters
+                Constraint::Percentage(25), // Remaining guesses
+                Constraint::Percentage(25), // Panic Meter (new)
+            ])
+            .split(main_chunks[0]); // Use the first main chunk
 
         // Used letters
         frame.render_widget(
@@ -51,7 +54,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     ),
             )
             .wrap(Wrap { trim: true }),
-            top_chunks[0],
+            top_horizontal_chunks[0],
         );
 
         // remaining guesses
@@ -67,20 +70,69 @@ pub fn ui(frame: &mut Frame, app: &App) {
                         ),
                 )
                 .wrap(Wrap { trim: true }),
-            top_chunks[1],
+            top_horizontal_chunks[1],
         );
 
+        // Panic Meter
+        render_panic_meter(app, frame, top_horizontal_chunks[2]); // New function call
+
         // Word progress display
-        render_current_word_progress(app, frame, chunks[1]);
+        render_current_word_progress(app, frame, main_chunks[1]);
 
         // Game body: left (hangman) and right (word reveal)
-        frame.render_widget(get_hangman_widget(app), chunks[2]);
+        frame.render_widget(get_hangman_widget(app), main_chunks[2]);
     }
 
-    // Always try to show the popup if game is finished OR all words are exhausted.
+    // Always try to show the popup if game is finished or words are exhausted
     show_end_game_popup(app, frame);
 }
 
+// --- New function for the panic meter ---
+fn render_panic_meter(app: &App, frame: &mut Frame, area: Rect) {
+    let bad_guesses = app.get_bad_guess_amount();
+    let max_bad_guesses = app.max_guesses; // Use max_guesses as the max for panic
+
+    // Calculate ratio, clamped to 0.0 to 1.0
+    let panic_ratio = (bad_guesses as f64 / max_bad_guesses as f64)
+        .min(1.0)
+        .max(0.0);
+
+    let (face, title_color) = match bad_guesses {
+        0 => ("😄", Color::Green),           // Happy
+        1..=2 => ("🙂", Color::LightGreen),  // Slightly happy
+        3..=4 => ("😐", Color::LightYellow), // Neutral
+        5..=6 => ("😟", Color::LightRed),    // Worried
+        7..=8 => ("😨", Color::Red),         // Scared
+        _ => ("😱", Color::DarkGray),        // Panicked / Dead (beyond max_guesses)
+    };
+
+    let panic_level_text = format!("{:.0}%", panic_ratio * 100.0);
+
+    let title_line = Line::from(vec![
+        Span::styled("Paniek meter! ", Style::default().fg(title_color).bold()),
+        Span::from(face),
+    ]);
+
+    let gauge_color = match panic_ratio {
+        _ if panic_ratio >= 0.75 => Color::Red,    // High panic
+        _ if panic_ratio >= 0.50 => Color::Yellow, // Medium panic
+        _ => Color::Green,                         // Low panic
+    };
+
+    let gauge = Gauge::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_set(symbols::border::ROUNDED)
+                .title(title_line),
+        )
+        .gauge_style(Style::default().fg(gauge_color).bg(Color::Black)) // Foreground is the bar color, background is the empty space
+        .percent((panic_ratio * 100.0) as u16); // Gauge takes percentage from 0-100
+
+    frame.render_widget(gauge, area);
+}
+
+// --- Rest of your ui.rs functions (unchanged for brevity, but include them) ---
 fn show_end_game_popup(app: &App, frame: &mut Frame) {
     // Only show the popup if the game is finished (win/loss) OR if all words are exhausted
     if !app.game_finished && !app.all_words_exhausted {
@@ -95,9 +147,9 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
             Line::from("💖 ALLE WOORDEN GERADEN! 💖")
                 .style(Style::default().fg(Color::Rgb(255, 192, 203)).bold()), // Light pink
             vec![
-                Line::from("pipi heeft gewoon alle woorden gepakt wtf 🤩".to_string()),
+                Line::from("Je hebt alle unieke woorden in de lijst geraden! 🤩".to_string()),
                 Line::from(""),
-                Line::from("ewa tering lekker!").style(Style::default().italic()),
+                Line::from("Bedankt voor het spelen!").style(Style::default().italic()),
                 Line::from(""),
                 Line::from("Druk op 'R' om alle woorden opnieuw te starten.")
                     .style(Style::default().fg(Color::LightYellow).bold().italic()),
@@ -146,7 +198,6 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
     );
 }
 
-// Hangman display and panic title
 fn get_hangman_widget(app: &App) -> Paragraph {
     // ASCII frames with consistent dimensions (7 lines tall)
     const FRAMES: [&str; 10] = [
@@ -234,7 +285,7 @@ fn get_hangman_widget(app: &App) -> Paragraph {
         // Frame 9 - final dead posture
         r#"
 +---+
-|   |   
+|   |
 |  (x)
 | _/|\_
 |  / \
