@@ -39,7 +39,11 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("✨ Gebruikte letters ✨"),
+                .border_set(symbols::border::ROUNDED)
+                .title(
+                    Line::from("✨ Gebruikte letters ✨")
+                        .style(Style::default().fg(Color::Magenta).bold()),
+                ),
         )
         .wrap(Wrap { trim: true }),
         top_chunks[0],
@@ -51,7 +55,11 @@ pub fn ui(frame: &mut Frame, app: &App) {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("💌 Aantal pogingen 💌"),
+                    .border_set(symbols::border::ROUNDED)
+                    .title(
+                        Line::from("💌 Aantal pogingen 💌")
+                            .style(Style::default().fg(Color::Cyan).bold()),
+                    ),
             )
             .wrap(Wrap { trim: true }),
         top_chunks[1],
@@ -73,27 +81,42 @@ fn show_end_game_popup(app: &App, frame: &mut Frame) {
 
     let popuparea = centered_rect(60, 40, frame.area());
 
-    let (title, message) = if app.has_won {
+    let (title, message_lines) = if app.has_won {
         (
-            "🎉 joepie de poepie!",
-            format!(
-                "mulder de eindbaas heeft het weer voor elkaar! 🥳\n\nDruk op 'R' om opnieuw te starten. \n \nHet woord was: {}",
-                app.word_to_guess.clone()
-            ),
+            Line::from("🎉 joepie de poepie!")
+                .style(Style::default().fg(Color::Rgb(255, 105, 180)).bold()), // Hot pink
+            vec![
+                Line::from("mulder de eindbaas heeft het weer voor elkaar! 🥳".to_string()),
+                Line::from(""),
+                Line::from("Druk op 'R' om opnieuw te starten. ".to_string().italic()),
+                Line::from(""),
+                Line::from(format!("Het woord was: {}", app.word_to_guess.clone()))
+                    .style(Style::default().fg(Color::Green).bold()),
+            ],
         )
     } else {
         (
-            "💀 loserrrr",
-            format!(
-                " tsjongejonge, wie had dat nou weer verwacht 😢\n\nDruk op 'R' om opnieuw te starten.\n\nHet woord was: {}",
-                app.word_to_guess.clone()
-            ),
+            Line::from("💀 loserrrr").style(Style::default().fg(Color::LightRed).bold()),
+            vec![
+                Line::from(" tsjongejonge, wie had dat nou weer verwacht 😢".to_string()),
+                Line::from(""),
+                Line::from("Druk op 'R' om opnieuw te starten.".to_string().italic()),
+                Line::from(""),
+                Line::from(format!("Het woord was: {}", app.word_to_guess.clone()))
+                    .style(Style::default().fg(Color::DarkGray).bold()),
+            ],
         )
     };
 
     frame.render_widget(
-        Paragraph::new(message)
-            .block(Block::default().borders(Borders::ALL).title(title))
+        Paragraph::new(message_lines)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_set(symbols::border::ROUNDED)
+                    .title(title)
+                    .style(Style::default().fg(Color::Rgb(255, 204, 229))), // Light pink background
+            )
             .wrap(Wrap { trim: true }),
         popuparea,
     );
@@ -199,15 +222,36 @@ fn get_hangman_widget(app: &App) -> Paragraph {
     let drawing = FRAMES[frame_index].trim_start(); // Trim leading newline
 
     let title = match bad_guesses {
-        0..=2 => "ewajaaa fucking chillings hiero bij die galg tent, ga zo biertje halen denk ik",
-        3..=4 => "w..wwacht eens even",
-        5..=6 => "owjeee",
-        7..=9 => "ummmmmm pipi...!!",
-        _ => "doei druif",
+        0..=2 => {
+            Line::from(
+                "ewajaaa fucking chillings hiero bij die galg tent, ga zo biertje halen denk ik",
+            )
+            .style(Style::default().fg(Color::Rgb(255, 192, 203)).italic()) // Pink
+        }
+        3..=4 => {
+            Line::from("w..wwacht eens even")
+                .style(Style::default().fg(Color::Rgb(255, 218, 185)).italic()) // Peach
+        }
+        5..=6 => {
+            Line::from("owjeee").style(Style::default().fg(Color::Rgb(255, 99, 71)).bold().italic()) // Tomato
+        }
+        7..=9 => {
+            Line::from("ummmmmm pipi...!!")
+                .style(Style::default().fg(Color::Rgb(255, 0, 0)).bold().italic()) // Red
+        }
+        _ => {
+            Line::from("doei druif")
+                .style(Style::default().fg(Color::Rgb(128, 0, 0)).bold().italic()) // Dark Red
+        }
     };
 
     Paragraph::new(drawing)
-        .block(Block::default().borders(Borders::ALL).title(title))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_set(symbols::border::ROUNDED)
+                .title(title),
+        )
         .wrap(Wrap { trim: true })
 }
 
@@ -233,23 +277,35 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 }
 
 fn render_current_word_progress(app: &App, frame: &mut Frame, area: Rect) {
-    let display: String = app
-        .word_to_guess
-        .chars()
-        .map(|c| {
-            if c == ' ' {
-                "  ".to_string() // double space for better visual gap
-            } else if app.used_characters.contains(&c) {
-                format!("{} ", c)
-            } else {
-                "_ ".to_string()
-            }
-        })
-        .collect();
+    let mut spans: Vec<Span> = Vec::new();
+    for c in app.word_to_guess.chars() {
+        if c == ' ' {
+            spans.push(Span::from("  ")); // double space for better visual gap
+        } else if app.used_characters.contains(&c) {
+            spans.push(Span::styled(
+                format!("{} ", c),
+                Style::default()
+                    .fg(Color::Rgb(255, 105, 180)) // Hot pink
+                    .bold(),
+            ));
+        } else {
+            spans.push(Span::styled(
+                "_ ",
+                Style::default().fg(Color::Rgb(220, 20, 60)).italic(), // Crimson
+            ));
+        }
+    }
 
     frame.render_widget(
-        Paragraph::new(display.trim_end())
-            .block(Block::default().borders(Borders::ALL).title("🌸 Woord 🌸")),
+        Paragraph::new(Line::from(spans).alignment(Alignment::Center)).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_set(symbols::border::ROUNDED)
+                .title(
+                    Line::from("🌸 Woord 🌸")
+                        .style(Style::default().fg(Color::Rgb(255, 192, 203)).bold()), // Pink
+                ),
+        ),
         area,
     );
 }
