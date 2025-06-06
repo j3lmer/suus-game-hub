@@ -12,6 +12,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
+        .margin(1)
         .constraints([
             Constraint::Length(3), // used letters
             Constraint::Length(3), // word progress
@@ -19,28 +20,39 @@ pub fn ui(frame: &mut Frame, app: &App) {
         ])
         .split(frame.area());
 
-    let middle_chunks = Layout::default()
+    let top_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[2]);
+        .split(chunks[0]);
 
     // Used letters
     frame.render_widget(
-        Paragraph::new(format!(
-            "Gebruikte letters: {}",
+        Paragraph::new(
             app.used_characters
                 .iter()
                 .map(|c| c.to_string())
                 .collect::<Vec<String>>()
-                .join(" - ")
-        ))
+                .join(" - "),
+        )
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("Gebruikte letters"),
         )
         .wrap(Wrap { trim: true }),
-        chunks[0],
+        top_chunks[0],
+    );
+
+    // remaining guesses
+    frame.render_widget(
+        Paragraph::new((app.max_guesses - app.current_guess_index).to_string())
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Aantal pogingen"),
+            )
+            .wrap(Wrap { trim: true }),
+        top_chunks[1],
     );
 
     // Word progress display

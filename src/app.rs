@@ -101,6 +101,12 @@ impl App {
             "susan is stinky",
             "stinky",
             "negerzoen",
+            "rino",
+            "rhino",
+            "banaan",
+            "hakenkruis",
+            "apenstaartje",
+            "paprika",
         ];
 
         let mut rng = thread_rng();
