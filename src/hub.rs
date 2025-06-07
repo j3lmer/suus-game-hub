@@ -58,6 +58,10 @@ impl GameHub {
             KeyCode::Left | KeyCode::Right => {
                 self.cycle_game_selection();
             }
+
+            KeyCode::Char('h') | KeyCode::Char('l') => {
+                self.cycle_game_selection();
+            }
             KeyCode::Enter => {
                 self.start_selected_game();
             }

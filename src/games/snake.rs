@@ -72,6 +72,7 @@ impl SnakeGame {
                 new_head.x += 1;
             }
         }
+        // als de new head hetzelfde is als de laatste, dan is de snake dood
 
         if new_head.x == self.food.x && new_head.y == self.food.y {
             self.snake.insert(0, new_head);
@@ -98,8 +99,6 @@ impl SnakeGame {
 
 impl Game for SnakeGame {
     fn render(&self, frame: &mut Frame, area: Rect) {
-        // Save area so game logic can reference size if needed
-
         snake_ui::render_snake_game(frame, area, self);
     }
 
@@ -113,6 +112,10 @@ impl Game for SnakeGame {
             KeyCode::Down => self.change_direction(Direction::Down),
             KeyCode::Left => self.change_direction(Direction::Left),
             KeyCode::Right => self.change_direction(Direction::Right),
+            KeyCode::Char('k') => self.change_direction(Direction::Up),
+            KeyCode::Char('j') => self.change_direction(Direction::Down),
+            KeyCode::Char('h') => self.change_direction(Direction::Left),
+            KeyCode::Char('l') => self.change_direction(Direction::Right),
             _ => {}
         }
     }

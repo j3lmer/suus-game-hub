@@ -29,7 +29,7 @@ pub fn render_snake_game(frame: &mut Frame, area: Rect, game: &SnakeGame) {
 
     if let Some(row) = buffer.get_mut((food.y % area.height) as usize) {
         if let Some(cell) = row.get_mut((food.x % area.width) as usize) {
-            *cell = '🍎'; // food symbol
+            *cell = 'X'; // food symbol
         }
     }
 
