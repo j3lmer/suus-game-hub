@@ -1,5 +1,5 @@
 use crate::hub::GameHub;
-use colorgrad::{Gradient, GradientBuilder};
+use colorgrad::GradientBuilder;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Tabs};
 use tui_big_text::{BigText, PixelSize};

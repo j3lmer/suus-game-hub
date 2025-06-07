@@ -1,5 +1,4 @@
 use crate::games::hangman::HangmanGame;
-use colorgrad::Gradient;
 use colorgrad::GradientBuilder;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Gauge, Paragraph, Wrap};

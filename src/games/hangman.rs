@@ -182,8 +182,4 @@ impl Game for HangmanGame {
     fn restart(&mut self) {
         self.start_new_game();
     }
-
-    fn is_finished(&self) -> bool {
-        self.game_finished || self.all_words_exhausted
-    }
 }

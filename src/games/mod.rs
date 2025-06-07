@@ -21,5 +21,4 @@ pub trait Game {
     fn handle_input(&mut self, key: KeyCode);
     fn render(&self, frame: &mut Frame, area: Rect);
     fn restart(&mut self);
-    fn is_finished(&self) -> bool;
 }
