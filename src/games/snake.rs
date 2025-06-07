@@ -94,14 +94,6 @@ impl SnakeGame {
             self.direction = dir;
         }
     }
-
-    pub fn snake(&self) -> &Vec<Position> {
-        &self.snake
-    }
-
-    pub fn food(&self) -> &Position {
-        &self.food
-    }
 }
 
 impl Game for SnakeGame {
@@ -121,12 +113,11 @@ impl Game for SnakeGame {
             KeyCode::Down => self.change_direction(Direction::Down),
             KeyCode::Left => self.change_direction(Direction::Left),
             KeyCode::Right => self.change_direction(Direction::Right),
-            KeyCode::Char(' ') => self.update(), // Advance manually for now
             _ => {}
         }
     }
 
     fn tick(&mut self) {
-        self.update(); // or whatever method advances the snake
+        self.update();
     }
 }

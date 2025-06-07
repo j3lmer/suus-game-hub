@@ -67,7 +67,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, hub: &mut GameHub) -> Result<
         }
 
         if last_tick.elapsed() >= tick_rate {
-            hub.update(); // <-- this only updates Snake if it's running
+            hub.update();
             last_tick = Instant::now();
         }
     }
