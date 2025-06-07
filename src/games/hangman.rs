@@ -107,7 +107,7 @@ impl HangmanGame {
             "bananenvla",
         ];
 
-        let mut available_words: Vec<&str> = all_words
+        let available_words: Vec<&str> = all_words
             .iter()
             .filter(|word| !self.previous_words.contains(&word.to_string()))
             .cloned()

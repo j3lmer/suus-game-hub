@@ -289,21 +289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hangman"
-version = "0.1.0"
-dependencies = [
- "colorgrad",
- "crossterm 0.29.0",
- "rand",
- "ratatui",
- "serde",
- "serde_json",
- "tui-big-text",
- "tui-gradient-block",
- "tui-rule",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -767,6 +752,21 @@ dependencies = [
  "quote",
  "rustversion",
  "syn",
+]
+
+[[package]]
+name = "suus-game-hub"
+version = "0.1.0"
+dependencies = [
+ "colorgrad",
+ "crossterm 0.29.0",
+ "rand",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "tui-big-text",
+ "tui-gradient-block",
+ "tui-rule",
 ]
 
 [[package]]

@@ -20,14 +20,19 @@ pub fn render_dashboard(frame: &mut Frame, hub: &GameHub) {
         ])
         .split(frame.area());
 
+    let big_title_chunk_centered = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(43), Constraint::Percentage(50)])
+        .split(main_chunks[0]);
+
     // Big title using tui-big-text
     let big_title = BigText::builder()
         .pixel_size(PixelSize::Quadrant)
         .style(Style::default().fg(Color::Rgb(255, 105, 180)).bold())
-        .lines(vec!["GAME HUB".into()])
+        .lines(vec!["PIPIS GAME HUB".into()])
         .build();
 
-    frame.render_widget(big_title, main_chunks[0]);
+    frame.render_widget(big_title, big_title_chunk_centered[1]);
 
     // Game selection area
     let game_area = Layout::default()
@@ -50,7 +55,7 @@ pub fn render_dashboard(frame: &mut Frame, hub: &GameHub) {
                 .borders(Borders::ALL)
                 .border_set(symbols::border::ROUNDED)
                 .title(
-                    Line::from("🎮 Available Games 🎮")
+                    Line::from("🎮 Beschikbare pipi spelletjes 🎮")
                         .style(Style::default().fg(Color::Rgb(255, 192, 203)).bold()),
                 ),
         )
@@ -84,13 +89,16 @@ pub fn render_dashboard(frame: &mut Frame, hub: &GameHub) {
 
     // Instructions
     let instructions = vec![Line::from(vec![
-        Span::styled("Use ", Style::default().fg(Color::Gray)),
+        Span::styled("gebruik ", Style::default().fg(Color::Gray)),
         Span::styled("←/→ ", Style::default().fg(Color::Yellow).bold()),
-        Span::styled("to select game • ", Style::default().fg(Color::Gray)),
+        Span::styled(
+            "om een spelletje te kiezen • ",
+            Style::default().fg(Color::Gray),
+        ),
         Span::styled("Enter ", Style::default().fg(Color::Green).bold()),
-        Span::styled("to play • ", Style::default().fg(Color::Gray)),
-        Span::styled("Escape ", Style::default().fg(Color::Red).bold()),
-        Span::styled("to quit", Style::default().fg(Color::Gray)),
+        Span::styled("om te spelen • ", Style::default().fg(Color::Gray)),
+        Span::styled("ES1 ", Style::default().fg(Color::Red).bold()),
+        Span::styled("om te stoppen", Style::default().fg(Color::Gray)),
     ])];
 
     let instructions_widget = Paragraph::new(instructions)
@@ -108,24 +116,6 @@ pub fn render_dashboard(frame: &mut Frame, hub: &GameHub) {
     frame.render_widget(instructions_widget, main_chunks[2]);
 }
 
-fn get_game_description(game_name: &str) -> Vec<Line> {
-    match game_name {
-        "Hangman" => vec![
-            Line::from("🎯 Classic word guessing game!"),
-            Line::from(""),
-            Line::from("Try to guess the hidden word by suggesting letters."),
-            Line::from("You have 10 wrong guesses before the game ends."),
-            Line::from(""),
-            Line::from("Features:"),
-            Line::from("• Unique Dutch words and phrases"),
-            Line::from("• Panic meter to track your progress"),
-            Line::from("• Colorful hangman animation"),
-            Line::from("• All words must be completed to finish"),
-        ],
-        _ => vec![Line::from("🎮 Select a game to see its description!")],
-    }
-}
-
 fn pastel(col: (u8, u8, u8)) -> G {
     Box::new(
         GradientBuilder::new()
@@ -133,6 +123,19 @@ fn pastel(col: (u8, u8, u8)) -> G {
             .build::<colorgrad::LinearGradient>()
             .unwrap(),
     )
+}
+
+fn get_game_description(game_name: &str) -> Vec<Line> {
+    match game_name {
+        "Galgje" => vec![
+            Line::from("🎯 pipis galgje spel!"),
+            Line::from(""),
+            Line::from("je weet ook wel hoe galgje werkt toch."),
+        ],
+        _ => vec![Line::from(
+            "🎮 kies een spelletje om zijn beschrijving te zien!",
+        )],
+    }
 }
 
 fn get_gradient_block(title_text: &str) -> GradientBlock<'_> {

@@ -67,6 +67,7 @@ pub fn render_hangman_game(game: &HangmanGame, frame: &mut Frame, area: Rect) {
                                 .style(Style::default().fg(Color::Cyan).bold()),
                         ),
                 )
+                .alignment(Alignment::Center)
                 .wrap(Wrap { trim: true }),
             top_horizontal_chunks[1],
         );
@@ -77,112 +78,17 @@ pub fn render_hangman_game(game: &HangmanGame, frame: &mut Frame, area: Rect) {
         // Word progress display
         render_current_word_progress(game, frame, main_chunks[1]);
 
-        // Game body: hangman display
-        frame.render_widget(get_hangman_widget(game), main_chunks[2]);
+        // Game body: hangman display with centered content
+        render_hangman_area(game, frame, main_chunks[2]);
     }
 
     // Always try to show the popup if game is finished or words are exhausted
     show_end_game_popup(game, frame);
 }
 
-fn get_hangman_widget(game: &HangmanGame) -> Paragraph {
-    const FRAMES: [&str; 10] = [
-        // Frame 0 - empty gallows
-        r#"
-+---+
-|   |
-|
-|
-|
-|
-========="#,
-        // Frame 1 - head
-        r#"
-+---+
-|   |
-|   o
-|
-|
-|
-========="#,
-        // Frame 2 - head + torso
-        r#"
-+---+
-|   |
-|   o
-|   |
-|
-|
-========="#,
-        // Frame 3 - head + torso + left arm
-        r#"
-   +---+
-|   |
-|   o
-|  /|
-|
-|
-========="#,
-        // Frame 4 - head + torso + both arms
-        r#"
-+---+
-|   |
-|   o
-|  /|\
-|
-|
-========="#,
-        // Frame 5 - head + torso + both arms + left leg
-        r#"
-+---+
-|   |
-|   o
-|  /|\
-|  /
-|
-========="#,
-        // Frame 6 - complete body
-        r#"
-+---+
-|   |
-|   o
-|  /|\
-|  / \
-|
-========="#,
-        // Frame 7 - face details
-        r#"
-+---+
-|   |
-|  (o)
-|  /|\
-|  / \
-|
-========="#,
-        // Frame 8 - dead eyes
-        r#"
-+---+
-|   |
-|  (x)
-|  /|\
-|  / \
-|
-========="#,
-        // Frame 9 - final dead posture
-        r#"
-+---+
-|   |
-|  (x)
-| _/|\_
-|  / \
-|
-========="#,
-    ];
-
+fn render_hangman_area(game: &HangmanGame, frame: &mut Frame, area: Rect) {
+    // Create the outer border block
     let bad_guesses = game.get_bad_guess_amount();
-    let frame_index = bad_guesses.min(9) as usize;
-    let drawing = FRAMES[frame_index].trim_start();
-
     let title = match bad_guesses {
         0..=2 => Line::from(
             "ewajaaa fucking chillings hiero bij die galg tent, ga zo biertje halen denk ik",
@@ -199,14 +105,132 @@ fn get_hangman_widget(game: &HangmanGame) -> Paragraph {
             .style(Style::default().fg(Color::Rgb(128, 0, 0)).bold().italic()),
     };
 
-    Paragraph::new(drawing)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_set(symbols::border::ROUNDED)
-                .title(title),
-        )
-        .wrap(Wrap { trim: true })
+    let border_block = Block::default()
+        .borders(Borders::ALL)
+        .border_set(symbols::border::ROUNDED)
+        .title(title);
+
+    // Render the border
+    frame.render_widget(border_block, area);
+
+    // Create inner area and use layout chunks to center horizontally
+    let inner_area = area.inner(Margin {
+        horizontal: 1,
+        vertical: 1,
+    });
+
+    // Create horizontal layout to center the hangman paragraph
+    let horizontal_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(50), // Left spacer
+            Constraint::Percentage(50), // Hangman content in middle
+        ])
+        .split(inner_area);
+
+    // Render the hangman drawing in the middle chunk
+    frame.render_widget(get_hangman_paragraph(game), horizontal_chunks[1]);
+}
+
+fn get_hangman_paragraph(game: &HangmanGame) -> Paragraph<'static> {
+    const FRAMES: [&str; 10] = [
+        // Frame 0 - empty gallows
+        r#"
++---+
+|   |
+|
+|
+|
+|
+========"#,
+        // Frame 1 - head
+        r#"
++---+
+|   |
+|   o
+|
+|
+|
+========"#,
+        // Frame 2 - head + torso
+        r#"
++---+
+|   |
+|   o
+|   |
+|
+|
+========"#,
+        // Frame 3 - head + torso + left arm
+        r#"
++---+
+|   |
+|   o
+|  /|
+|
+|
+========"#,
+        // Frame 4 - head + torso + both arms
+        r#"
++---+
+|   |
+|   o
+|  /|\
+|
+|
+========"#,
+        // Frame 5 - head + torso + both arms + left leg
+        r#"
++---+
+|   |
+|   o
+|  /|\
+|  /
+|
+========"#,
+        // Frame 6 - complete body
+        r#"
++---+
+|   |
+|   o
+|  /|\
+|  / \
+|
+========"#,
+        // Frame 7 - face details
+        r#"
++---+
+|   |
+|  (o)
+|  /|\
+|  / \
+|
+========"#,
+        // Frame 8 - dead eyes
+        r#"
++---+
+|   |
+|  (x)
+|  /|\
+|  / \
+|
+========"#,
+        // Frame 9 - final dead posture
+        r#"
++---+
+|   |
+|  (x)
+| _/|\_
+|  / \
+|
+========"#,
+    ];
+
+    let bad_guesses = game.get_bad_guess_amount();
+    let frame_index = bad_guesses.min(9) as usize;
+    let drawing = FRAMES[frame_index].trim_start();
+
+    Paragraph::new(drawing).wrap(Wrap { trim: true })
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {

@@ -20,15 +20,20 @@ impl GameHub {
             current_screen: Screen::Dashboard,
             selected_game_index: 0,
             current_game: None,
-            available_games: vec![
-                GameType::Hangman,
-                // Add more games here in the future
-                // GameType::TicTacToe,
-                // GameType::Snake,
-            ],
+            available_games: vec![GameType::Hangman],
         }
     }
 
+    // Update the create_game method:
+    fn create_game(&self, game_type: GameType) -> Box<dyn Game> {
+        match game_type {
+            GameType::Hangman => {
+                let mut game = Box::new(HangmanGame::new());
+                game.restart();
+                game
+            }
+        }
+    }
     pub fn handle_input(&mut self, key: KeyCode) {
         match self.current_screen {
             Screen::Dashboard => self.handle_dashboard_input(key),
@@ -80,16 +85,6 @@ impl GameHub {
         if let Some(game_type) = self.available_games.get(self.selected_game_index) {
             self.current_game = Some(self.create_game(game_type.clone()));
             self.current_screen = Screen::Game;
-        }
-    }
-
-    fn create_game(&self, game_type: GameType) -> Box<dyn Game> {
-        match game_type {
-            GameType::Hangman => {
-                let mut game = Box::new(HangmanGame::new());
-                game.restart(); // Start the game immediately
-                game
-            } // Add more game types here
         }
     }
 
