@@ -1,4 +1,4 @@
-use crate::games::{Game, GameType, hangman::HangmanGame};
+use crate::games::{Game, GameType, hangman::HangmanGame, snake::SnakeGame};
 use ratatui::crossterm::event::KeyCode;
 
 #[derive(PartialEq)]
@@ -20,7 +20,7 @@ impl GameHub {
             current_screen: Screen::Dashboard,
             selected_game_index: 0,
             current_game: None,
-            available_games: vec![GameType::Hangman],
+            available_games: vec![GameType::Hangman, GameType::Snake],
         }
     }
 
@@ -29,6 +29,12 @@ impl GameHub {
         match game_type {
             GameType::Hangman => {
                 let mut game = Box::new(HangmanGame::new());
+                game.restart();
+                game
+            }
+
+            GameType::Snake => {
+                let mut game = Box::new(SnakeGame::new());
                 game.restart();
                 game
             }

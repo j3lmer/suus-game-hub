@@ -1,4 +1,5 @@
 pub mod hangman;
+pub mod snake;
 
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{Frame, layout::Rect};
@@ -6,12 +7,14 @@ use ratatui::{Frame, layout::Rect};
 #[derive(Clone)]
 pub enum GameType {
     Hangman,
+    Snake,
 }
 
 impl GameType {
     pub fn name(&self) -> &str {
         match self {
             GameType::Hangman => "Galgje",
+            GameType::Snake => "Snake",
         }
     }
 }
