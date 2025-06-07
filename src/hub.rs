@@ -24,6 +24,12 @@ impl GameHub {
         }
     }
 
+    pub fn update(&mut self) {
+        if let Some(game) = &mut self.current_game {
+            game.tick();
+        }
+    }
+
     // Update the create_game method:
     fn create_game(&self, game_type: GameType) -> Box<dyn Game> {
         match game_type {

@@ -1,5 +1,6 @@
 pub mod dashboard;
 pub mod hangman_ui;
+pub mod snake_ui;
 
 use crate::hub::{GameHub, Screen};
 use ratatui::Frame;

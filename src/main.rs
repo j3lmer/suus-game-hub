@@ -11,6 +11,7 @@ use ratatui::crossterm::terminal::{
 use ratatui::prelude::CrosstermBackend;
 use std::error::Error;
 use std::io;
+use std::time::{Duration, Instant};
 use ui::render_ui;
 
 mod games;
@@ -42,23 +43,32 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, hub: &mut GameHub) -> Result<bool, io::Error> {
+    let tick_rate = Duration::from_millis(100);
+    let mut last_tick = Instant::now();
+
     loop {
         terminal.draw(|f| render_ui(f, hub))?;
 
-        // Handle events
-        if let Event::Key(key) = read()? {
-            if key.kind == KeyEventKind::Release {
-                continue;
-            }
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or(Duration::from_secs(0));
 
-            if KeyEventKind::Press == key.kind {
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Release {
+                    continue;
+                }
+
                 match key.code {
                     KeyCode::Esc => return Ok(true),
-                    _ => {
-                        hub.handle_input(key.code);
-                    }
+                    _ => hub.handle_input(key.code),
                 }
             }
+        }
+
+        if last_tick.elapsed() >= tick_rate {
+            hub.update(); // <-- this only updates Snake if it's running
+            last_tick = Instant::now();
         }
     }
 }
