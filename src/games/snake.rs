@@ -51,6 +51,12 @@ impl SnakeGame {
         self.food = Position { x: 10, y: 10 };
     }
 
+    pub fn die() {
+        // stop the polling
+        // display end screen like hangman
+        // add option to restart
+    }
+
     fn update(&mut self) {
         let mut new_head = self.snake[0].clone();
 

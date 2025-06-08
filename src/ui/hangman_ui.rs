@@ -380,7 +380,7 @@ fn show_end_game_popup(game: &HangmanGame, frame: &mut Frame) {
                 Line::from(""),
                 Line::from("Bedankt voor het spelen!").style(Style::default().italic()),
                 Line::from(""),
-                Line::from("Druk op 'R' om alle woorden opnieuw te starten.")
+                Line::from("Druk op 'R' of Enter om alle woorden opnieuw te starten.")
                     .style(Style::default().fg(Color::LightYellow).bold().italic()),
                 Line::from("Druk op 'Backspace' om terug te gaan naar het menu.")
                     .style(Style::default().fg(Color::LightBlue).bold().italic()),
@@ -393,7 +393,7 @@ fn show_end_game_popup(game: &HangmanGame, frame: &mut Frame) {
             vec![
                 Line::from("mulder de eindbaas heeft het weer voor elkaar! 🥳".to_string()),
                 Line::from(""),
-                Line::from("Druk op 'R' om opnieuw te starten.".to_string())
+                Line::from("Druk op 'R' of Enter om opnieuw te starten.".to_string())
                     .style(Style::default().italic()),
                 Line::from("Druk op 'Backspace' om terug te gaan naar het menu.".to_string())
                     .style(Style::default().italic()),
@@ -408,7 +408,7 @@ fn show_end_game_popup(game: &HangmanGame, frame: &mut Frame) {
             vec![
                 Line::from(" tsjongejonge, wie had dat nou weer verwacht 😢".to_string()),
                 Line::from(""),
-                Line::from("Druk op 'R' om opnieuw te starten.".to_string())
+                Line::from("Druk op 'R' of Enter om opnieuw te starten.".to_string())
                     .style(Style::default().italic()),
                 Line::from("Druk op 'Backspace' om terug te gaan naar het menu.".to_string())
                     .style(Style::default().italic()),

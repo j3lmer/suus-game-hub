@@ -118,26 +118,25 @@ impl HangmanGame {
         }
 
         let mut rng = thread_rng();
-        let word = available_words
+
+        available_words
             .choose(&mut rng)
             .unwrap_or(&"ERROR_WORD")
-            .to_string();
-
-        word
+            .to_string()
     }
 }
 
 impl Game for HangmanGame {
     fn handle_input(&mut self, key: KeyCode) {
         if self.all_words_exhausted {
-            if let KeyCode::Char('r') | KeyCode::Char('R') = key {
+            if let KeyCode::Char('r') | KeyCode::Char('R') | KeyCode::Enter = key {
                 self.start_new_game();
             }
             return;
         }
 
         if self.game_finished {
-            if let KeyCode::Char('r') | KeyCode::Char('R') = key {
+            if let KeyCode::Char('r') | KeyCode::Char('R') | KeyCode::Enter = key {
                 self.start_new_game();
             }
             return;

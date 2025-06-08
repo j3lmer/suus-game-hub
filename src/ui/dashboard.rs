@@ -97,7 +97,7 @@ pub fn render_dashboard(frame: &mut Frame, hub: &GameHub) {
         ),
         Span::styled("Enter ", Style::default().fg(Color::Green).bold()),
         Span::styled("om te spelen • ", Style::default().fg(Color::Gray)),
-        Span::styled("ES1 ", Style::default().fg(Color::Red).bold()),
+        Span::styled("ESC ", Style::default().fg(Color::Red).bold()),
         Span::styled("om te stoppen", Style::default().fg(Color::Gray)),
     ])];
 
