@@ -4,6 +4,11 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{Frame, layout::Rect};
+use std::{
+    fs::File,
+    io::{BufReader, prelude::*},
+    path::Path,
+};
 
 pub struct HangmanGame {
     pub guess_input: String,
@@ -61,53 +66,18 @@ impl HangmanGame {
             .count() as u32
     }
 
-    fn get_word_to_guess(&self) -> String {
-        let all_words = [
-            "appeltaart",
-            "computer",
-            "vakantie",
-            "susan",
-            "mjauw",
-            "miauw",
-            "pipi",
-            "knuffel",
-            "zomer",
-            "regenboog",
-            "humberto tan",
-            "jelmer",
-            "snorfbokkel",
-            "guppie",
-            "poesje",
-            "hottentottententententoonstelling",
-            "poep",
-            "snakie",
-            "batsen",
-            "sapje",
-            "chocola",
-            "bier",
-            "snoepje",
-            "prinses",
-            "tiara",
-            "soepje",
-            "jammie",
-            "bami",
-            "simsen",
-            "zuipen",
-            "beerenburg",
-            "friesland",
-            "susan is stinky",
-            "stinky",
-            "negerzoen",
-            "rino",
-            "rhino",
-            "banaan",
-            "hakenkruis",
-            "apenstaartje",
-            "paprika",
-            "bananenvla",
-        ];
+    fn get_lines(filename: impl AsRef<Path>) -> Vec<String> {
+        let file = File::open(filename).expect("bestand bestaat niet");
+        let buf = BufReader::new(file);
+        buf.lines()
+            .map(|l| l.expect("kon die lijn niet krijgen broer"))
+            .collect()
+    }
 
-        let available_words: Vec<&str> = all_words
+    fn get_word_to_guess(&self) -> String {
+        let contents = Self::get_lines("data/hangman_words.txt");
+
+        let available_words: Vec<String> = contents
             .iter()
             .filter(|word| !self.previous_words.contains(&word.to_string()))
             .cloned()
@@ -121,8 +91,8 @@ impl HangmanGame {
 
         available_words
             .choose(&mut rng)
-            .unwrap_or(&"ERROR_WORD")
-            .to_string()
+            .cloned()
+            .unwrap_or_else(|| "ERROR_WORD".to_string())
     }
 }
 
