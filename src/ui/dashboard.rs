@@ -137,6 +137,11 @@ fn get_game_description(game_name: &str) -> Vec<Line> {
             Line::from(""),
             Line::from("aanschouw! het is het spelletje met dat leuke slangetje"),
         ],
+        "2048" => vec![
+            Line::from("🐍 pipi's grote nummers spel! 🐍"),
+            Line::from(""),
+            Line::from("spelletje.. voor pipi"),
+        ],
         _ => vec![Line::from(
             "🎮 kies een spelletje om zijn beschrijving te zien!",
         )],

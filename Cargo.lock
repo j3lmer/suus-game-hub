@@ -790,6 +790,7 @@ dependencies = [
 name = "suus-game-hub"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "colorgrad",
  "crossterm 0.29.0",
  "ncurses",
