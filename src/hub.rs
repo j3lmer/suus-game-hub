@@ -9,6 +9,11 @@ pub enum Screen {
     Game,
 }
 
+pub enum MenuDirection {
+    Left,
+    Right,
+}
+
 pub struct GameHub {
     pub current_screen: Screen,
     pub selected_game_index: usize,
@@ -62,13 +67,14 @@ impl GameHub {
 
     fn handle_dashboard_input(&mut self, key: KeyCode) {
         match key {
-            KeyCode::Left | KeyCode::Right => {
-                self.cycle_game_selection();
+            KeyCode::Right | KeyCode::Char('l') => {
+                self.cycle_game_selection(MenuDirection::Right);
             }
 
-            KeyCode::Char('h') | KeyCode::Char('l') => {
-                self.cycle_game_selection();
+            KeyCode::Left | KeyCode::Char('h') => {
+                self.cycle_game_selection(MenuDirection::Left);
             }
+
             KeyCode::Enter => {
                 self.start_selected_game();
             }
@@ -98,9 +104,22 @@ impl GameHub {
         }
     }
 
-    fn cycle_game_selection(&mut self) {
+    fn cycle_game_selection(&mut self, dir: MenuDirection) {
         if !self.available_games.is_empty() {
-            self.selected_game_index = (self.selected_game_index + 1) % self.available_games.len();
+            match dir {
+                MenuDirection::Left => {
+                    if self.selected_game_index == 0 {
+                        return;
+                    }
+
+                    self.selected_game_index = self.selected_game_index - 1;
+                }
+                MenuDirection::Right => {
+                    self.selected_game_index =
+                        (self.selected_game_index + 1) % self.available_games.len();
+                }
+                _ => {}
+            }
         }
     }
 
