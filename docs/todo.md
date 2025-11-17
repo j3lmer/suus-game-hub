@@ -1,5 +1,6 @@
 # todo:
 
+- on esc press: weet je het zeker? popup voordat je er echt uit gemikt wordt
 - dynamische / meer ruimte voor de gebruikte letters
 - snake:
   - borders

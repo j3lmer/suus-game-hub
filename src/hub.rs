@@ -1,5 +1,10 @@
 use crate::games::{
-    Game, GameType, hangman::HangmanGame, snake::SnakeGame, twozerofoureight::Game2048,
+    adventure::Adventure,
+    hangman::HangmanGame,
+    // snake::SnakeGame,
+    // twozerofoureight::Game2048,
+    Game,
+    GameType,
 };
 use ratatui::crossterm::event::KeyCode;
 
@@ -27,7 +32,7 @@ impl GameHub {
             current_screen: Screen::Dashboard,
             selected_game_index: 0,
             current_game: None,
-            available_games: vec![GameType::Hangman, GameType::Snake, GameType::Game2048],
+            available_games: vec![GameType::Hangman, GameType::Adventure],
         }
     }
 
@@ -46,13 +51,18 @@ impl GameHub {
                 game
             }
 
-            GameType::Snake => {
-                let mut game = Box::new(SnakeGame::new());
-                game.restart();
-                game
-            }
-            GameType::Game2048 => {
-                let mut game = Box::new(Game2048::new());
+            // GameType::Snake => {
+            //     let mut game = Box::new(SnakeGame::new());
+            //     game.restart();
+            //     game
+            // }
+            // GameType::Game2048 => {
+            //     let mut game = Box::new(Game2048::new());
+            //     game.restart();
+            //     game
+            // }
+            GameType::Adventure => {
+                let mut game = Box::new(Adventure::new());
                 game.restart();
                 game
             }
@@ -84,7 +94,7 @@ impl GameHub {
 
     fn handle_game_input(&mut self, key: KeyCode) {
         match key {
-            KeyCode::Backspace => {
+            KeyCode::Esc => {
                 // Return to dashboard
                 self.current_screen = Screen::Dashboard;
                 self.current_game = None;
@@ -117,8 +127,7 @@ impl GameHub {
                 MenuDirection::Right => {
                     self.selected_game_index =
                         (self.selected_game_index + 1) % self.available_games.len();
-                }
-                _ => {}
+                } // _ => {}
             }
         }
     }
