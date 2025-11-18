@@ -6,12 +6,17 @@ use ratatui::{Frame, layout::Rect};
 pub struct Scene {
     pub id: &'static str,
     pub enter_text: &'static str,
+    pub scene_art: &'static str,
 }
 
 impl Scene {
-    pub fn new(id: &'static str, enter_text: &'static str) -> Self {
-        Self { id, enter_text }
+    pub fn new(id: &'static str, enter_text: &'static str, scene_art: &'static str) -> Self {
+        Self { id, enter_text, scene_art }
     }
+}
+
+pub struct AdventureStats {
+    pub moves_done: i32,
 }
 
 pub struct Adventure {
@@ -25,17 +30,26 @@ pub struct Adventure {
     input_buffer: String,
 }
 
+// TODO: dit moet ik laden uit een json file or smth
 impl Adventure {
     pub fn new() -> Self {
         Self {
             scenes: vec![
                 Scene::new(
                     "bedroom_in_bed",
-                    "Het is zondag. Je vindt jezelf in bedje. Alles is zwart.",
+                    "Het is zondag, je vind jezelf in bedje, met een flinke kater\n
+                    jelmer en jij hebben de hele avond weer een of ander nieuw spelletje gespeeld wat hij je aan heeft gesmeerd.\n
+                    om heel eerlijk te zijn vond je het best leuk, maar je kan je niet herinneren wat het nou eigenlijk was.\n\n
+                    Je voelt je vies, alsof er een laag smots over je heen zit. je vraagt je af wanneer de laatste keer was dat je hebt gedouched.
+
+                    Maar wacht eens even, alles is zwart! ben ik blind geworden? wat is er aan de hand?!
+                ",
+                    ""
                 ),
                 Scene::new(
                     "bedroom_towards_closet",
                     "Je staat naast het bed. Je kijkt naar de kast.",
+                    ""
                 ),
             ],
             current_scene: 0,
@@ -57,6 +71,21 @@ impl Adventure {
         self.log.push(format!("GAME OVER: {}", reason));
     }
 
+    pub fn inventory(&self) -> Vec<&'static str> {
+        vec!["📱"]
+    }
+
+    // TODO: dit moet worden geupdate bij elke enter
+    pub fn stats(&self) -> AdventureStats {
+        AdventureStats {
+            moves_done: 0
+        }
+    }
+
+    pub fn current_scene_art(&self) -> &str {
+        self.scenes[self.current_scene].scene_art
+    }
+
     pub fn update(&mut self) {}
 
     /// Basic prototype command parser
@@ -66,15 +95,15 @@ impl Adventure {
 
         match self.scenes[self.current_scene].id {
             "bedroom_in_bed" => match cmd.as_str() {
-                "open eyes" | "ogen open" => {
+                "doe ogen open" => {
                     self.log.push("Ah, dat is beter.".to_string());
                 }
-                "get out of bed" | "uit bed" => {
+                "sta op" | "uit bedje" | "opstaan" => {
                     self.current_scene = 1;
                     let s = &self.scenes[self.current_scene];
                     self.log.push(s.enter_text.to_string());
                 }
-                "doomscroll" => {
+                "doomscrollen" | "doomscroll" => {
                     self.die("Instagram heeft je opgegeten.");
                 }
                 _ => self.log.push("Dat kan niet.".to_string()),
