@@ -19,6 +19,7 @@ pub struct AdventureStats {
 }
 
 pub struct Adventure {
+    /// Scene state
     scenes: Vec<Scene>,
     current_scene: usize,
 
@@ -34,6 +35,7 @@ pub struct Adventure {
 }
 
 impl Adventure {
+    // TODO: load from json or something
     pub fn new() -> Self {
         Self {
             scenes: vec![
