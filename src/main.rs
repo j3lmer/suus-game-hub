@@ -17,6 +17,8 @@ use ui::render_ui;
 mod games;
 mod hub;
 mod ui;
+mod utils;
+
 
 fn main() -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;

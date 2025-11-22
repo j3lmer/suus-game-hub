@@ -3,7 +3,8 @@
     {
       "id": "bedroom_in_bed",
       "scene_enter": "Het is zondag, je vindt jezelf in bedje met een flinke kater.\n Jelmer en jij hebben de hele avond weer een of ander nieuw spelletje gespeeld dat hij je heeft aangesmeerd.\n Om heel eerlijk te zijn vond je het best leuk, maar je kan je niet herinneren wat het nou eigenlijk was.\n\n Je voelt je vies, alsof er een laag smots over je heen zit.\n Je vraagt je af wanneer de laatste keer was dat je hebt gedoucht.\n Maar wacht eens even, alles is zwart! Ben ik blind geworden? Wat is er aan de hand?!\n",
-      "scene_art": "hoi ;)",
+      "scene_art": "",
+      "scene_image": "data/assets/bedje.jpg",
       "commands": {
         "doe ogen open": { "action": "log", "text": "Ah, dat is beter." },
         "sta op":        { "action": "change_scene", "target": "bedroom_towards_closet" },
@@ -16,6 +17,7 @@
       "id": "bedroom_towards_closet",
       "scene_enter": "Je staat naast het bed...",
       "scene_art": "",
+      "scene_image": "data/assets/opgestaan.jpg",
       "commands": {
         "naar badkamer": { "action": "log", "text": "(Not implemented)" }
       }

@@ -1,5 +1,6 @@
 use crate::games::Game;
 use crate::ui::adventure_ui;
+use crate::utils::braille_art;
 use ratatui::crossterm::event::KeyCode;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -17,6 +18,7 @@ pub struct SceneJson {
     pub id: String,
     pub scene_enter: String,
     pub scene_art: String,
+    pub scene_image: Option<String>, // Path to image file
     pub commands: HashMap<String, CommandAction>,
 }
 
@@ -26,9 +28,9 @@ pub struct AdventureJsonRoot {
 }
 
 pub struct Scene {
-    pub id: String,
     pub enter_text: String,
     pub scene_art: String,
+    pub braille_art: Option<String>, // Cached braille representation
     pub commands: HashMap<String, CommandAction>,
 }
 
@@ -63,12 +65,18 @@ impl Adventure {
         let mut scenes = HashMap::new();
 
         for s in root.scenes {
+            // Load braille art if image path is provided
+            let braille_art = s
+                .scene_image
+                .as_ref()
+                .map(|img_path| braille_art::load_scene_image(img_path));
+
             scenes.insert(
                 s.id.clone(),
                 Scene {
-                    id: s.id,
                     enter_text: s.scene_enter,
                     scene_art: s.scene_art,
+                    braille_art,
                     commands: s.commands,
                 },
             );
@@ -116,8 +124,21 @@ impl Adventure {
         AdventureStats { moves_done: 0 }
     }
 
-    pub fn current_scene_art(&self) -> &str {
-        &self.scenes[&self.current_scene].scene_art
+    pub fn current_scene_art(&self) -> String {
+        let scene = &self.scenes[&self.current_scene];
+
+        // Prefer braille art if available and not empty, otherwise use text art
+        if let Some(ref braille) = scene.braille_art {
+            if !braille.is_empty()
+                && !braille.starts_with("Failed")
+                && !braille.starts_with("[Image not available")
+            {
+                return braille.clone();
+            }
+        }
+
+        // Fallback to text art
+        scene.scene_art.clone()
     }
 
     pub fn update(&mut self) {}
