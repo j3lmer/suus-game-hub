@@ -1,17 +1,35 @@
 use crate::games::Game;
 use crate::ui::adventure_ui;
 use ratatui::crossterm::event::KeyCode;
+use serde::Deserialize;
+use std::collections::HashMap;
 
-pub struct Scene {
-    pub id: &'static str,
-    pub enter_text: &'static str,
-    pub scene_art: &'static str,
+#[derive(Deserialize)]
+pub struct CommandAction {
+    pub action: String,
+    pub text: Option<String>,
+    pub target: Option<String>,
+    pub reason: Option<String>,
 }
 
-impl Scene {
-    pub fn new(id: &'static str, enter_text: &'static str, scene_art: &'static str) -> Self {
-        Self { id, enter_text, scene_art }
-    }
+#[derive(Deserialize)]
+pub struct SceneJson {
+    pub id: String,
+    pub scene_enter: String,
+    pub scene_art: String,
+    pub commands: HashMap<String, CommandAction>,
+}
+
+#[derive(Deserialize)]
+pub struct AdventureJsonRoot {
+    pub scenes: Vec<SceneJson>,
+}
+
+pub struct Scene {
+    pub id: String,
+    pub enter_text: String,
+    pub scene_art: String,
+    pub commands: HashMap<String, CommandAction>,
 }
 
 pub struct AdventureStats {
@@ -19,65 +37,71 @@ pub struct AdventureStats {
 }
 
 pub struct Adventure {
-    /// Scene state
-    scenes: Vec<Scene>,
-    current_scene: usize,
+    scenes: HashMap<String, Scene>,
+    current_scene: String,
 
-    /// Everything printed so far
     log: Vec<String>,
-
-    /// What player is typing
     pub input_buffer: String,
 
-    /// Autocomplete state
-    pub autocomplete_matches: Vec<&'static str>,
+    pub autocomplete_matches: Vec<String>,
     pub autocomplete_index: usize,
 }
 
 impl Adventure {
-    // TODO: load from json or something
     pub fn new() -> Self {
-        Self {
-            scenes: vec![
-                Scene::new(
-                    "bedroom_in_bed",
-                    "Het is zondag, je vind jezelf in bedje, met een flinke kater\n\
-                    jelmer en jij hebben de hele avond weer een of ander nieuw spelletje gespeeld wat hij je aan heeft gesmeerd.\n\
-                    om heel eerlijk te zijn vond je het best leuk, maar je kan je niet herinneren wat het nou eigenlijk was.\n\n\
-                    Je voelt je vies, alsof er een laag smots over je heen zit. je vraagt je af wanneer de laatste keer was dat je hebt gedouched.\n\n\
-                    Maar wacht eens even, alles is zwart! ben ik blind geworden? wat is er aan de hand?!",
-                    "",
-                ),
-                Scene::new(
-                    "bedroom_towards_closet",
-                    "Je staat naast het bed. Je kijkt naar de kast.",
-                    "",
-                ),
-            ],
-            current_scene: 0,
-            log: Vec::new(),
+        let file =
+            std::fs::read_to_string("data/adventure.json").expect("Could not read adventure.json");
+
+        let root: AdventureJsonRoot = serde_json::from_str(&file).expect("Invalid adventure.json");
+
+        // take the first scene ID BEFORE moving the vector
+        let first_scene_id = root.scenes.first().expect("No scenes in JSON").id.clone();
+
+        let mut scenes = HashMap::new();
+
+        // now it is safe to move 'root.scenes'
+        for s in root.scenes {
+            scenes.insert(
+                s.id.clone(),
+                Scene {
+                    id: s.id,
+                    enter_text: s.scene_enter,
+                    scene_art: s.scene_art,
+                    commands: s.commands,
+                },
+            );
+        }
+
+        // Get the enter text before moving scenes
+        let first_scene_enter = scenes
+            .get(&first_scene_id)
+            .expect("First scene not found")
+            .enter_text
+            .clone();
+
+        Adventure {
+            scenes,
+            current_scene: first_scene_id,
+            log: vec![first_scene_enter],
             input_buffer: String::new(),
-            autocomplete_matches: Vec::new(),
+            autocomplete_matches: vec![],
             autocomplete_index: 0,
         }
     }
 
     pub fn start_new_game(&mut self) {
-        self.current_scene = 0;
+        let first_scene_id = self.current_scene.clone();
+
         self.log.clear();
         self.input_buffer.clear();
         self.autocomplete_matches.clear();
         self.autocomplete_index = 0;
 
-        let first = &self.scenes[self.current_scene];
-        self.log.push(first.enter_text.to_string());
+        let first: &Scene = &self.scenes[&first_scene_id];
+
+        self.log.push(first.enter_text.clone());
         self.update_autocomplete();
     }
-
-    pub fn die(&mut self, reason: &str) {
-        self.log.push(format!("GAME OVER: {}", reason));
-    }
-
     pub fn inventory(&self) -> Vec<&'static str> {
         vec!["📱"]
     }
@@ -87,26 +111,14 @@ impl Adventure {
     }
 
     pub fn current_scene_art(&self) -> &str {
-        self.scenes[self.current_scene].scene_art
+        &self.scenes[&self.current_scene].scene_art
     }
 
     pub fn update(&mut self) {}
 
-    fn all_commands(&self) -> Vec<&'static str> {
-        match self.scenes[self.current_scene].id {
-            "bedroom_in_bed" => vec![
-                "doe ogen open",
-                "sta op",
-                "uit bedje",
-                "opstaan",
-                "doomscrollen",
-            ],
-            "bedroom_towards_closet" => vec![
-                "naar badkamer",
-                "go bathroom",
-            ],
-            _ => vec![],
-        }
+    fn all_commands(&self) -> Vec<String> {
+        let scene = self.scenes.get(&self.current_scene).unwrap();
+        scene.commands.keys().cloned().collect()
     }
 
     pub fn update_autocomplete(&mut self) {
@@ -119,31 +131,39 @@ impl Adventure {
         self.autocomplete_index = 0;
     }
 
-    pub fn autocomplete_suggestion(&self) -> Option<&'static str> {
-        self.autocomplete_matches.get(self.autocomplete_index).copied()
+    pub fn autocomplete_suggestion(&self) -> Option<&str> {
+        self.autocomplete_matches
+            .get(self.autocomplete_index)
+            .map(|s| s.as_str())
     }
 
-    fn process_command(&mut self, cmd: &str) {
-        let cmd = cmd.trim().to_lowercase();
-        self.log.push(format!("> {}", cmd));
+    fn process_command(&mut self, input: &str) {
+        let input = input.trim().to_lowercase();
+        self.log.push(format!("> {}", input));
 
-        match self.scenes[self.current_scene].id {
-            "bedroom_in_bed" => match cmd.as_str() {
-                "doe ogen open" => self.log.push("Ah, dat is beter.".to_string()),
-                "sta op" | "uit bedje" | "opstaan" => {
-                    self.current_scene = 1;
-                    let s = &self.scenes[self.current_scene];
-                    self.log.push(s.enter_text.to_string());
+        let scene = self.scenes.get(&self.current_scene).unwrap();
+
+        if let Some(action) = scene.commands.get(&input) {
+            match action.action.as_str() {
+                "log" => {
+                    self.log.push(action.text.clone().unwrap_or_default());
                 }
-                "doomscrollen" => self.die("Instagram heeft je opgegeten."),
-                _ => self.log.push("Dat kan niet.".to_string()),
-            },
-            "bedroom_towards_closet" => match cmd.as_str() {
-                "naar de hal" => self.log.push("(Not implemented)".to_string()),
-                _ => self.log.push("Dat kan niet.".to_string()),
-            },
-            _ => {}
+                "change_scene" => {
+                    let target = action.target.as_ref().expect("Missing target");
+                    self.current_scene = target.clone();
+                    let new_scene = self.scenes.get(target).unwrap();
+                    self.log.push(new_scene.enter_text.clone());
+                }
+                "die" => {
+                    let reason = action.reason.clone().unwrap_or("You died".to_string());
+                    self.log.push(format!("GAME OVER: {}", reason));
+                }
+                _ => self.log.push("Ik weet niet wat ik hiermee moet..".to_string()),
+            }
+        } else {
+            self.log.push("Dat kan niet.".to_string());
         }
+
         self.update_autocomplete();
     }
 }
