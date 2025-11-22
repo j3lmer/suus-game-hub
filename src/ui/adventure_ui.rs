@@ -5,33 +5,53 @@ use ratatui::text::Span;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 
 pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
-    // Split whole area into: [top big area, bottom input]
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(3), Constraint::Length(3)])
         .split(area);
 
-    // Split top into left(log) and right(info panel)
     let top_split = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(main_layout[0]);
 
-    // === LEFT PANEL (Log Window) ===
+    // === LEFT PANEL (Log Window) with scrolling ===
     let log_text = game
         .log()
         .iter()
         .flat_map(|entry| {
             entry
-                .lines() // split on newline
+                .lines()
                 .map(|line| Line::raw(line.to_string()))
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 
-    let log_widget = Paragraph::new(log_text)
+    // Add 2 empty lines at the bottom, otherwise content is off screen
+    let mut log_with_padding = log_text;
+    log_with_padding.push(Line::raw(""));
+    log_with_padding.push(Line::raw(""));
+
+    // Calculate scroll offset
+    let log_height = top_split[0].height.saturating_sub(2) as usize; // subtract borders
+    let total_lines = log_with_padding.len();
+
+    let scroll_offset = if game.auto_scroll && total_lines > log_height {
+        // Auto-scroll to bottom
+        total_lines - log_height
+    } else if game.auto_scroll {
+        // Not enough content to scroll
+        0
+    } else {
+        // Manual scroll position (clamped)
+        let max_scroll = total_lines.saturating_sub(log_height);
+        (game.log_scroll as usize).min(max_scroll)
+    };
+
+    let log_widget = Paragraph::new(log_with_padding)
         .block(Block::default().borders(Borders::ALL).title("Log"))
-        .wrap(Wrap { trim: false });
+        .wrap(Wrap { trim: false })
+        .scroll((scroll_offset as u16, 0));
 
     frame.render_widget(log_widget, top_split[0]);
 
@@ -80,13 +100,11 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
 
 fn render_input_line(game: &Adventure) -> Paragraph<'_> {
     let input = game.input();
-
     let spans: Vec<Span> = if let Some(suggestion) = game.autocomplete_suggestion() {
         if suggestion.starts_with(input) {
             let typed_len = input.len();
             let typed_part = &suggestion[..typed_len];
             let suggested_part = &suggestion[typed_len..];
-
             vec![
                 Span::raw(typed_part),
                 Span::styled(suggested_part, Style::default().fg(Color::DarkGray)),

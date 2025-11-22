@@ -45,6 +45,10 @@ pub struct Adventure {
 
     pub autocomplete_matches: Vec<String>,
     pub autocomplete_index: usize,
+
+    // Scrolling state
+    pub log_scroll: u16,
+    pub auto_scroll: bool,
 }
 
 impl Adventure {
@@ -54,12 +58,10 @@ impl Adventure {
 
         let root: AdventureJsonRoot = serde_json::from_str(&file).expect("Invalid adventure.json");
 
-        // take the first scene ID BEFORE moving the vector
         let first_scene_id = root.scenes.first().expect("No scenes in JSON").id.clone();
 
         let mut scenes = HashMap::new();
 
-        // now it is safe to move 'root.scenes'
         for s in root.scenes {
             scenes.insert(
                 s.id.clone(),
@@ -72,7 +74,6 @@ impl Adventure {
             );
         }
 
-        // Get the enter text before moving scenes
         let first_scene_enter = scenes
             .get(&first_scene_id)
             .expect("First scene not found")
@@ -86,6 +87,8 @@ impl Adventure {
             input_buffer: String::new(),
             autocomplete_matches: vec![],
             autocomplete_index: 0,
+            log_scroll: 0,
+            auto_scroll: true,
         }
     }
 
@@ -96,12 +99,15 @@ impl Adventure {
         self.input_buffer.clear();
         self.autocomplete_matches.clear();
         self.autocomplete_index = 0;
+        self.log_scroll = 0;
+        self.auto_scroll = true;
 
         let first: &Scene = &self.scenes[&first_scene_id];
 
         self.log.push(first.enter_text.clone());
         self.update_autocomplete();
     }
+
     pub fn inventory(&self) -> Vec<&'static str> {
         vec!["📱"]
     }
@@ -158,13 +164,36 @@ impl Adventure {
                     let reason = action.reason.clone().unwrap_or("You died".to_string());
                     self.log.push(format!("GAME OVER: {}", reason));
                 }
-                _ => self.log.push("Ik weet niet wat ik hiermee moet..".to_string()),
+                _ => self
+                    .log
+                    .push("Ik weet niet wat ik hiermee moet..".to_string()),
             }
         } else {
             self.log.push("Dat kan niet.".to_string());
         }
 
+        // Re-enable auto-scroll when new content is added
+        self.auto_scroll = true;
+        self.log_scroll = 0; // Reset manual scroll position
         self.update_autocomplete();
+    }
+
+    pub fn scroll_up(&mut self) {
+        self.auto_scroll = false;
+        self.log_scroll = self.log_scroll.saturating_sub(1);
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.log_scroll = self.log_scroll.saturating_add(1);
+        // Check if we've scrolled to the bottom, re-enable auto-scroll
+        let total_lines = self.total_log_lines();
+        if self.log_scroll as usize >= total_lines {
+            self.auto_scroll = true;
+        }
+    }
+
+    pub fn total_log_lines(&self) -> usize {
+        self.log.iter().map(|entry| entry.lines().count()).sum()
     }
 }
 
@@ -199,6 +228,12 @@ impl Game for Adventure {
                     self.input_buffer =
                         self.autocomplete_matches[self.autocomplete_index].to_string();
                 }
+            }
+            KeyCode::Up => {
+                self.scroll_up();
+            }
+            KeyCode::Down => {
+                self.scroll_down();
             }
             _ => {}
         }
