@@ -3,6 +3,7 @@ use ratatui::prelude::*;
 use ratatui::style::{Color, Style};
 use ratatui::text::Span;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui_image::StatefulImage;
 
 pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     let main_layout = Layout::default()
@@ -27,23 +28,18 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
         })
         .collect::<Vec<_>>();
 
-    // Add 2 empty lines at the bottom, otherwise content is off screen
     let mut log_with_padding = log_text;
     log_with_padding.push(Line::raw(""));
     log_with_padding.push(Line::raw(""));
 
-    // Calculate scroll offset
-    let log_height = top_split[0].height.saturating_sub(2) as usize; // subtract borders
+    let log_height = top_split[0].height.saturating_sub(2) as usize;
     let total_lines = log_with_padding.len();
 
     let scroll_offset = if game.auto_scroll && total_lines > log_height {
-        // Auto-scroll to bottom
         total_lines - log_height
     } else if game.auto_scroll {
-        // Not enough content to scroll
         0
     } else {
-        // Manual scroll position (clamped)
         let max_scroll = total_lines.saturating_sub(log_height);
         (game.log_scroll as usize).min(max_scroll)
     };
@@ -77,11 +73,20 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
 
     frame.render_widget(inventory_widget, right_split[0]);
 
-    let scene_text = Paragraph::new(game.current_scene_art())
-        .block(Block::default().borders(Borders::ALL).title("Scene"))
-        .wrap(Wrap { trim: true });
+    // === SCENE DISPLAY - Image or Fallback Text ===
+    let scene = game.current_scene();
 
-    frame.render_widget(scene_text, right_split[1]);
+    if let Some(ref protocol_cell) = scene.scene_image {
+        let mut protocol = protocol_cell.borrow_mut();
+        let image = StatefulImage::new(None);
+        frame.render_stateful_widget(image, right_split[1], &mut *protocol);
+    } else {
+        let scene_text = Paragraph::new(scene.scene_art.clone())
+            .block(Block::default().borders(Borders::ALL).title("Scene"))
+            .wrap(Wrap { trim: true });
+
+        frame.render_widget(scene_text, right_split[1]);
+    }
 
     let stats_lines = vec![Line::raw(format!(
         "Dingen gedaan: {}",
@@ -89,7 +94,10 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     ))];
 
     let stats_widget =
-        Paragraph::new(stats_lines).block(Block::default().borders(Borders::ALL).title("Stats"));
+        Paragraph::new(stats_lines)
+        .block(Block::default()
+        .borders(Borders::ALL)
+        .title("Stats"));
 
     frame.render_widget(stats_widget, right_split[2]);
 
@@ -98,22 +106,25 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     frame.render_widget(input_widget, main_layout[1]);
 }
 
-fn render_input_line(game: &Adventure) -> Paragraph<'_> {
-    let input = game.input();
+fn render_input_line(game: &Adventure) -> Paragraph {
+    let input = game.input().to_string();
     let spans: Vec<Span> = if let Some(suggestion) = game.autocomplete_suggestion() {
-        if suggestion.starts_with(input) {
+        if suggestion.starts_with(&input) {
             let typed_len = input.len();
             let typed_part = &suggestion[..typed_len];
             let suggested_part = &suggestion[typed_len..];
             vec![
-                Span::raw(typed_part),
-                Span::styled(suggested_part, Style::default().fg(Color::DarkGray)),
+                Span::raw(typed_part.to_string()),
+                Span::styled(
+                    suggested_part.to_string(),
+                    Style::default().fg(Color::DarkGray),
+                ),
             ]
         } else {
-            vec![Span::raw(input.to_string())]
+            vec![Span::raw(input)]
         }
     } else {
-        vec![Span::raw(input.to_string())]
+        vec![Span::raw(input)]
     };
 
     Paragraph::new(Line::from(spans))

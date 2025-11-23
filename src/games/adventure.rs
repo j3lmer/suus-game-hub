@@ -1,8 +1,10 @@
 use crate::games::Game;
 use crate::ui::adventure_ui;
-use crate::utils::braille_art;
+use crate::utils::image as image_utils;
 use ratatui::crossterm::event::KeyCode;
+use ratatui_image::protocol::StatefulProtocol;
 use serde::Deserialize;
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 #[derive(Deserialize)]
@@ -30,7 +32,7 @@ pub struct AdventureJsonRoot {
 pub struct Scene {
     pub enter_text: String,
     pub scene_art: String,
-    pub braille_art: Option<String>, // Cached braille representation
+    pub scene_image: Option<RefCell<Box<dyn StatefulProtocol>>>, // Interior mutability for rendering
     pub commands: HashMap<String, CommandAction>,
 }
 
@@ -56,7 +58,9 @@ pub struct Adventure {
 impl Adventure {
     pub fn new() -> Self {
         let file =
-            std::fs::read_to_string("data/adventure.json").expect("Could not read adventure.json");
+            std::fs::read_to_string("data/adventure.json")
+            .expect("Could not read adventure.json")
+        ;
 
         let root: AdventureJsonRoot = serde_json::from_str(&file).expect("Invalid adventure.json");
 
@@ -65,18 +69,20 @@ impl Adventure {
         let mut scenes = HashMap::new();
 
         for s in root.scenes {
-            // Load braille art if image path is provided
-            let braille_art = s
+            // Load image if path is provided
+            let scene_image = s
                 .scene_image
                 .as_ref()
-                .map(|img_path| braille_art::load_scene_image(img_path));
+                .and_then(|img_path| image_utils::load_scene_image(img_path)
+                    .ok())
+                .map(RefCell::new);
 
             scenes.insert(
                 s.id.clone(),
                 Scene {
                     enter_text: s.scene_enter,
                     scene_art: s.scene_art,
-                    braille_art,
+                    scene_image,
                     commands: s.commands,
                 },
             );
@@ -124,21 +130,8 @@ impl Adventure {
         AdventureStats { moves_done: 0 }
     }
 
-    pub fn current_scene_art(&self) -> String {
-        let scene = &self.scenes[&self.current_scene];
-
-        // Prefer braille art if available and not empty, otherwise use text art
-        if let Some(ref braille) = scene.braille_art {
-            if !braille.is_empty()
-                && !braille.starts_with("Failed")
-                && !braille.starts_with("[Image not available")
-            {
-                return braille.clone();
-            }
-        }
-
-        // Fallback to text art
-        scene.scene_art.clone()
+    pub fn current_scene(&self) -> &Scene {
+        &self.scenes[&self.current_scene]
     }
 
     pub fn update(&mut self) {}

@@ -6,11 +6,26 @@
       "scene_art": "",
       "scene_image": "data/assets/bedje.jpg",
       "commands": {
-        "doe ogen open": { "action": "log", "text": "Ah, dat is beter." },
-        "sta op":        { "action": "change_scene", "target": "bedroom_towards_closet" },
-        "opstaan":       { "action": "change_scene", "target": "bedroom_towards_closet" },
-        "uit bedje":     { "action": "change_scene", "target": "bedroom_towards_closet" },
-        "doomscrollen":  { "action": "die", "reason": "Instagram heeft je opgegeten." }
+        "doe ogen open": {
+          "action": "log",
+          "text": "Ah, dat is beter."
+        },
+        "sta op": {
+          "action": "change_scene",
+          "target": "bedroom_towards_closet"
+        },
+        "opstaan": {
+          "action": "change_scene",
+          "target": "bedroom_towards_closet"
+        },
+        "uit bedje": {
+          "action": "change_scene",
+          "target": "bedroom_towards_closet"
+        },
+        "doomscrollen": {
+          "action": "die",
+          "reason": "Instagram heeft je opgegeten."
+        }
       }
     },
     {
@@ -19,7 +34,10 @@
       "scene_art": "",
       "scene_image": "data/assets/opgestaan.jpg",
       "commands": {
-        "naar badkamer": { "action": "log", "text": "(Not implemented)" }
+        "naar badkamer": {
+          "action": "log",
+          "text": "(Not implemented)"
+        }
       }
     }
   ]

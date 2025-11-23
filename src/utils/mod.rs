@@ -1,1 +1,1 @@
-pub mod braille_art;
+pub mod image;
