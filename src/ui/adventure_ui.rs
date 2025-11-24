@@ -76,16 +76,18 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     // === SCENE DISPLAY - Image or Fallback Text ===
     let scene = game.current_scene();
 
-    if let Some(ref protocol_cell) = scene.scene_image {
-        let mut protocol = protocol_cell.borrow_mut();
-        let image = StatefulImage::new(None);
-        frame.render_stateful_widget(image, right_split[1], &mut *protocol);
-    } else {
-        let scene_text = Paragraph::new(scene.scene_art.clone())
-            .block(Block::default().borders(Borders::ALL).title("Scene"))
-            .wrap(Wrap { trim: true });
+    if game.art_shown {
+        if let Some(ref protocol_cell) = scene.scene_image {
+            let mut protocol = protocol_cell.borrow_mut();
+            let image = StatefulImage::new(None);
+            frame.render_stateful_widget(image, right_split[1], &mut *protocol);
+        } else {
+            let scene_text = Paragraph::new(scene.scene_art.clone())
+                .block(Block::default().borders(Borders::ALL).title("Scene"))
+                .wrap(Wrap { trim: true });
 
-        frame.render_widget(scene_text, right_split[1]);
+            frame.render_widget(scene_text, right_split[1]);
+        }
     }
 
     let stats_lines = vec![Line::raw(format!(
@@ -94,10 +96,7 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     ))];
 
     let stats_widget =
-        Paragraph::new(stats_lines)
-        .block(Block::default()
-        .borders(Borders::ALL)
-        .title("Stats"));
+        Paragraph::new(stats_lines).block(Block::default().borders(Borders::ALL).title("Stats"));
 
     frame.render_widget(stats_widget, right_split[2]);
 

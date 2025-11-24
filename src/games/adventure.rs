@@ -21,7 +21,7 @@ pub struct SceneJson {
     pub scene_enter: String,
     pub scene_art: String,
     pub scene_image: Option<String>, // Path to image file
-    pub commands: HashMap<String, CommandAction>,
+    pub commands: HashMap<String, Vec<CommandAction>>,
 }
 
 #[derive(Deserialize)]
@@ -33,7 +33,7 @@ pub struct Scene {
     pub enter_text: String,
     pub scene_art: String,
     pub scene_image: Option<RefCell<Box<dyn StatefulProtocol>>>, // Interior mutability for rendering
-    pub commands: HashMap<String, CommandAction>,
+    pub commands: HashMap<String, Vec<CommandAction>>,
 }
 
 pub struct AdventureStats {
@@ -53,14 +53,14 @@ pub struct Adventure {
     // Scrolling state
     pub log_scroll: u16,
     pub auto_scroll: bool,
+
+    pub art_shown: bool,
 }
 
 impl Adventure {
     pub fn new() -> Self {
         let file =
-            std::fs::read_to_string("data/adventure.json")
-            .expect("Could not read adventure.json")
-        ;
+            std::fs::read_to_string("data/adventure.json").expect("Could not read adventure.json");
 
         let root: AdventureJsonRoot = serde_json::from_str(&file).expect("Invalid adventure.json");
 
@@ -73,8 +73,7 @@ impl Adventure {
             let scene_image = s
                 .scene_image
                 .as_ref()
-                .and_then(|img_path| image_utils::load_scene_image(img_path)
-                    .ok())
+                .and_then(|img_path| image_utils::load_scene_image(img_path).ok())
                 .map(RefCell::new);
 
             scenes.insert(
@@ -103,6 +102,7 @@ impl Adventure {
             autocomplete_index: 0,
             log_scroll: 0,
             auto_scroll: true,
+            art_shown: false,
         }
     }
 
@@ -163,24 +163,29 @@ impl Adventure {
 
         let scene = self.scenes.get(&self.current_scene).unwrap();
 
-        if let Some(action) = scene.commands.get(&input) {
-            match action.action.as_str() {
-                "log" => {
-                    self.log.push(action.text.clone().unwrap_or_default());
+        if let Some(actions) = scene.commands.get(&input) {
+            for action in actions {
+                match action.action.as_str() {
+                    "log" => {
+                        self.log.push(action.text.clone().unwrap_or_default());
+                    }
+                    "change_scene" => {
+                        let target = action.target.as_ref().expect("Missing target");
+                        self.current_scene = target.clone();
+                        let new_scene = self.scenes.get(target).unwrap();
+                        self.log.push(new_scene.enter_text.clone());
+                    }
+                    "die" => {
+                        let reason = action.reason.clone().unwrap_or("You died".to_string());
+                        self.log.push(format!("GAME OVER: {}", reason));
+                    }
+                    "show_scene_art" => {
+                        self.art_shown = true;
+                    }
+                    _ => self
+                        .log
+                        .push("Ik weet niet wat ik hiermee moet..".to_string()),
                 }
-                "change_scene" => {
-                    let target = action.target.as_ref().expect("Missing target");
-                    self.current_scene = target.clone();
-                    let new_scene = self.scenes.get(target).unwrap();
-                    self.log.push(new_scene.enter_text.clone());
-                }
-                "die" => {
-                    let reason = action.reason.clone().unwrap_or("You died".to_string());
-                    self.log.push(format!("GAME OVER: {}", reason));
-                }
-                _ => self
-                    .log
-                    .push("Ik weet niet wat ik hiermee moet..".to_string()),
             }
         } else {
             self.log.push("Dat kan niet.".to_string());
