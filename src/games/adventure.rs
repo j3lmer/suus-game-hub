@@ -55,6 +55,8 @@ pub struct Adventure {
     pub auto_scroll: bool,
 
     pub art_shown: bool,
+
+    pub stats: AdventureStats,
 }
 
 impl Adventure {
@@ -103,6 +105,8 @@ impl Adventure {
             log_scroll: 0,
             auto_scroll: true,
             art_shown: false,
+
+            stats: AdventureStats { moves_done: 0 },
         }
     }
 
@@ -115,6 +119,7 @@ impl Adventure {
         self.autocomplete_index = 0;
         self.log_scroll = 0;
         self.auto_scroll = true;
+        self.stats.moves_done = 0;
 
         let first: &Scene = &self.scenes[&first_scene_id];
 
@@ -126,15 +131,9 @@ impl Adventure {
         vec!["📱"]
     }
 
-    pub fn stats(&self) -> AdventureStats {
-        AdventureStats { moves_done: 0 }
-    }
-
     pub fn current_scene(&self) -> &Scene {
         &self.scenes[&self.current_scene]
     }
-
-    pub fn update(&mut self) {}
 
     fn all_commands(&self) -> Vec<String> {
         let scene = self.scenes.get(&self.current_scene).unwrap();
@@ -187,6 +186,8 @@ impl Adventure {
                         .push("Ik weet niet wat ik hiermee moet..".to_string()),
                 }
             }
+
+            self.stats.moves_done +=1;
         } else {
             self.log.push("Dat kan niet.".to_string());
         }
@@ -256,10 +257,6 @@ impl Game for Adventure {
             }
             _ => {}
         }
-    }
-
-    fn tick(&mut self) {
-        self.update();
     }
 }
 

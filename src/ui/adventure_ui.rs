@@ -92,7 +92,7 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
 
     let stats_lines = vec![Line::raw(format!(
         "Dingen gedaan: {}",
-        game.stats().moves_done
+        game.stats.moves_done
     ))];
 
     let stats_widget =
@@ -105,7 +105,7 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     frame.render_widget(input_widget, main_layout[1]);
 }
 
-fn render_input_line(game: &Adventure) -> Paragraph {
+fn render_input_line(game: &Adventure) -> Paragraph<'_> {
     let input = game.input().to_string();
     let spans: Vec<Span> = if let Some(suggestion) = game.autocomplete_suggestion() {
         if suggestion.starts_with(&input) {
