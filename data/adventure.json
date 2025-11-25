@@ -6,31 +6,42 @@
       "scene_art": "",
       "scene_image": "data/assets/bedje.jpg",
       "commands": {
-        "doe ogen open": [
+        "doe ogen open": {
+          "once": true,
+         "actions": [
+            {
+              "action": "show_scene_art"
+            },
+            {
+              "action": "log",
+              "text": "Ah, dat is beter."
+            }
+          ]
+        },
+        "sta op": [
           {
-            "action": "show_scene_art"
-          },
-          {
-            "action": "log",
-            "text": "Ah, dat is beter."
+            "action": "change_scene",
+            "target": "bedroom_towards_closet"
           }
         ],
-        "sta op": [ {
-          "action": "change_scene",
-          "target": "bedroom_towards_closet"
-        } ],
-        "opstaan": [ {
-          "action": "change_scene",
-          "target": "bedroom_towards_closet"
-        } ],
-        "uit bedje": [ {
-          "action": "change_scene",
-          "target": "bedroom_towards_closet"
-        } ],
-        "doomscrollen": [ {
-          "action": "die",
-          "reason": "Instagram heeft je opgegeten."
-        } ]
+        "opstaan": [
+          {
+            "action": "change_scene",
+            "target": "bedroom_towards_closet"
+          }
+        ],
+        "uit bedje": [
+          {
+            "action": "change_scene",
+            "target": "bedroom_towards_closet"
+          }
+        ],
+        "doomscrollen": [
+          {
+            "action": "die",
+            "reason": "Instagram heeft je opgegeten."
+          }
+        ]
       }
     },
     {
@@ -39,10 +50,33 @@
       "scene_art": "",
       "scene_image": "data/assets/opgestaan.jpg",
       "commands": {
-        "naar badkamer": [ {
-          "action": "log",
-          "text": "(Not implemented)"
-        } ]
+        "naar de hal": [
+          {
+            "action": "change_scene",
+            "target": "hallway_towards_shower"
+          },
+          {
+            "action": "log",
+            "text": "Je bent nu in de hal"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hallway_towards_shower",
+      "scene_enter": "Je staat naast het bed...",
+      "scene_art": "",
+      "scene_image": "data/assets/hal.jpg",
+      "commands": {
+        "naar de wc": [
+          {
+            "action": "log",
+            "text": "OOAAA OOEEE HEALUK DIKKE BAMS OEEEEOOEOEOE pffrttttt..💩"
+          }
+        ],
+        "naar de naar de badkamer": [],
+        "naar de naar de woonkamer": [],
+        "naar beneden": []
       }
     }
   ]

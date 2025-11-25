@@ -1,8 +1,9 @@
 ## Pipis avontuur!
 
 ## todo:
-  - bepalen hoe groot elke ascii art moet zijn voor visual preview
-  - soort autocomplete feature zodat je niet alles hoeft te gokken wat je kan doen
+ - global commands die je altijd kan doen, bijv telefoon
+ - er voor zorgen dat sommige commands dependant zijn op dingen, zoals dat je een telefoon nodig hebt om te bellen,
+ of dat je je ogen open moet doen voordat je de kamer uit kan.
 
 ## story: 
   `./story.md`
@@ -16,3 +17,7 @@
 
 ## default inventory
   - telefoon
+
+### Done:
+  - bepalen hoe groot elke ascii art moet zijn voor visual preview
+  - soort autocomplete feature zodat je niet alles hoeft te gokken wat je kan doen

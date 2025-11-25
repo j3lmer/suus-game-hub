@@ -1,13 +1,16 @@
 use crate::games::Game;
 use crate::ui::adventure_ui;
 use crate::utils::image as image_utils;
+
 use ratatui::crossterm::event::KeyCode;
 use ratatui_image::protocol::StatefulProtocol;
+
 use serde::Deserialize;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct CommandAction {
     pub action: String,
     pub text: Option<String>,
@@ -15,13 +18,23 @@ pub struct CommandAction {
     pub reason: Option<String>,
 }
 
+#[derive(Deserialize, Clone)]
+#[serde(untagged)]
+pub enum CommandJson {
+    Simple(Vec<CommandAction>),
+    Wrapped {
+        once: Option<bool>,
+        actions: Vec<CommandAction>,
+    },
+}
+
 #[derive(Deserialize)]
 pub struct SceneJson {
     pub id: String,
     pub scene_enter: String,
     pub scene_art: String,
-    pub scene_image: Option<String>, // Path to image file
-    pub commands: HashMap<String, Vec<CommandAction>>,
+    pub scene_image: Option<String>,
+    pub commands: HashMap<String, CommandJson>,
 }
 
 #[derive(Deserialize)]
@@ -32,8 +45,8 @@ pub struct AdventureJsonRoot {
 pub struct Scene {
     pub enter_text: String,
     pub scene_art: String,
-    pub scene_image: Option<RefCell<Box<dyn StatefulProtocol>>>, // Interior mutability for rendering
-    pub commands: HashMap<String, Vec<CommandAction>>,
+    pub scene_image: Option<RefCell<Box<dyn StatefulProtocol>>>,
+    pub commands: HashMap<String, CommandJson>,
 }
 
 pub struct AdventureStats {
@@ -50,7 +63,6 @@ pub struct Adventure {
     pub autocomplete_matches: Vec<String>,
     pub autocomplete_index: usize,
 
-    // Scrolling state
     pub log_scroll: u16,
     pub auto_scroll: bool,
 
@@ -71,7 +83,6 @@ impl Adventure {
         let mut scenes = HashMap::new();
 
         for s in root.scenes {
-            // Load image if path is provided
             let scene_image = s
                 .scene_image
                 .as_ref()
@@ -105,7 +116,6 @@ impl Adventure {
             log_scroll: 0,
             auto_scroll: true,
             art_shown: false,
-
             stats: AdventureStats { moves_done: 0 },
         }
     }
@@ -121,7 +131,7 @@ impl Adventure {
         self.auto_scroll = true;
         self.stats.moves_done = 0;
 
-        let first: &Scene = &self.scenes[&first_scene_id];
+        let first = &self.scenes[&first_scene_id];
 
         self.log.push(first.enter_text.clone());
         self.update_autocomplete();
@@ -136,7 +146,7 @@ impl Adventure {
     }
 
     fn all_commands(&self) -> Vec<String> {
-        let scene = self.scenes.get(&self.current_scene).unwrap();
+        let scene = &self.scenes[&self.current_scene];
         scene.commands.keys().cloned().collect()
     }
 
@@ -156,45 +166,69 @@ impl Adventure {
             .map(|s| s.as_str())
     }
 
+    fn run_actions(&mut self, actions: &[CommandAction]) {
+        for action in actions {
+            match action.action.as_str() {
+                "log" => {
+                    self.log.push(action.text.clone().unwrap_or_default());
+                }
+                "change_scene" => {
+                    let target = action.target.as_ref().unwrap();
+                    self.current_scene = target.clone();
+                    let new_scene = self.scenes.get(target).unwrap();
+                    self.log.push(new_scene.enter_text.clone());
+                }
+                "die" => {
+                    let reason = action.reason.clone().unwrap_or("You died".to_string());
+                    self.log.push(format!("GAME OVER: {}", reason));
+                }
+                "show_scene_art" => {
+                    self.art_shown = true;
+                }
+                _ => self
+                    .log
+                    .push("Ik weet niet wat ik hiermee moet..".to_string()),
+            }
+        }
+
+        self.stats.moves_done += 1;
+    }
+
     fn process_command(&mut self, input: &str) {
         let input = input.trim().to_lowercase();
         self.log.push(format!("> {}", input));
 
-        let scene = self.scenes.get(&self.current_scene).unwrap();
+        // STEP 1 — extract command info without keeping mutable borrow
+        let cmd = {
+            let scene = self.scenes.get_mut(&self.current_scene).unwrap();
+            scene.commands.get(&input).cloned()
+        };
 
-        if let Some(actions) = scene.commands.get(&input) {
-            for action in actions {
-                match action.action.as_str() {
-                    "log" => {
-                        self.log.push(action.text.clone().unwrap_or_default());
-                    }
-                    "change_scene" => {
-                        let target = action.target.as_ref().expect("Missing target");
-                        self.current_scene = target.clone();
-                        let new_scene = self.scenes.get(target).unwrap();
-                        self.log.push(new_scene.enter_text.clone());
-                    }
-                    "die" => {
-                        let reason = action.reason.clone().unwrap_or("You died".to_string());
-                        self.log.push(format!("GAME OVER: {}", reason));
-                    }
-                    "show_scene_art" => {
-                        self.art_shown = true;
-                    }
-                    _ => self
-                        .log
-                        .push("Ik weet niet wat ik hiermee moet..".to_string()),
-                }
+        // STEP 2 — handle extracted command
+        let mut remove_after = false;
+
+        match cmd {
+            Some(CommandJson::Simple(actions)) => {
+                self.run_actions(&actions);
             }
-
-            self.stats.moves_done +=1;
-        } else {
-            self.log.push("Dat kan niet.".to_string());
+            Some(CommandJson::Wrapped { once, actions }) => {
+                self.run_actions(&actions);
+                remove_after = once.unwrap_or(false);
+            }
+            _ => {
+                self.log.push("ik wit net wat ik hjiermei mat".to_string());
+            }
         }
 
-        // Re-enable auto-scroll when new content is added
+        // STEP 3 — optionally remove the command (new borrow allowed)
+        if remove_after {
+            if let Some(scene) = self.scenes.get_mut(&self.current_scene) {
+                scene.commands.remove(&input);
+            }
+        }
+
         self.auto_scroll = true;
-        self.log_scroll = 0; // Reset manual scroll position
+        self.log_scroll = 0;
         self.update_autocomplete();
     }
 
@@ -205,7 +239,7 @@ impl Adventure {
 
     pub fn scroll_down(&mut self) {
         self.log_scroll = self.log_scroll.saturating_add(1);
-        // Check if we've scrolled to the bottom, re-enable auto-scroll
+
         let total_lines = self.total_log_lines();
         if self.log_scroll as usize >= total_lines {
             self.auto_scroll = true;
@@ -249,18 +283,13 @@ impl Game for Adventure {
                         self.autocomplete_matches[self.autocomplete_index].to_string();
                 }
             }
-            KeyCode::Up => {
-                self.scroll_up();
-            }
-            KeyCode::Down => {
-                self.scroll_down();
-            }
+            KeyCode::Up => self.scroll_up(),
+            KeyCode::Down => self.scroll_down(),
             _ => {}
         }
     }
 }
 
-// Public getters
 impl Adventure {
     pub fn log(&self) -> &Vec<String> {
         &self.log
