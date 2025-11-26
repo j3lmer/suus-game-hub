@@ -1,4 +1,5 @@
 {
+  "$schema": "./adventure.schema.json",
   "scenes": [
     {
       "id": "bedroom_in_bed",

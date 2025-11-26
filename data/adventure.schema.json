@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Adventure Game Schema",
+  "type": "object",
+  "required": ["scenes"],
+  "properties": {
+    "scenes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/scene"
+      }
+    }
+  },
+
+  "definitions": {
+    "scene": {
+      "type": "object",
+      "required": ["id", "scene_enter", "scene_art", "scene_image", "commands"],
+      "properties": {
+        "id": { "type": "string" },
+        "scene_enter": { "type": "string" },
+        "scene_art": { "type": "string" },
+        "scene_image": { "type": "string" },
+        "commands": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/command"
+          }
+        }
+      }
+    },
+
+    "command": {
+      "description": "A command can be either an array of actions or an object containing a 'once' flag and actions.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "$ref": "#/definitions/action" }
+        },
+        {
+          "type": "object",
+          "required": ["once", "actions"],
+          "properties": {
+            "once": { "type": "boolean" },
+            "actions": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/action" }
+            }
+          }
+        }
+      ]
+    },
+
+    "action": {
+      "type": "object",
+      "required": ["action"],
+      "properties": {
+        "action": { "type": "string" },
+        "text": { "type": "string" },
+        "target": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

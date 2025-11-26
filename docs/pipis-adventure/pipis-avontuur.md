@@ -21,3 +21,4 @@
 ### Done:
   - bepalen hoe groot elke ascii art moet zijn voor visual preview
   - soort autocomplete feature zodat je niet alles hoeft te gokken wat je kan doen
+  - json schema fixed
