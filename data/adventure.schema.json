@@ -3,13 +3,20 @@
   "title": "Adventure Game Schema",
   "type": "object",
   "required": [
-    "scenes"
+    "scenes",
+    "global_commands"
   ],
   "properties": {
     "scenes": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/scene"
+      }
+    },
+    "global_commands": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/command"
       }
     }
   },
@@ -45,7 +52,7 @@
       }
     },
     "command": {
-      "description": "A command can be either an array of actions or an object containing a 'once' flag and actions.",
+      "description": "A command can be either an array of actions or an object containing a 'once' flag, actions, and optional fallback.",
       "oneOf": [
         {
           "type": "array",
@@ -56,7 +63,6 @@
         {
           "type": "object",
           "required": [
-            "once",
             "actions"
           ],
           "properties": {
@@ -68,6 +74,19 @@
               "items": {
                 "$ref": "#/definitions/action"
               }
+            },
+            "fallback": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/action"
+                  }
+                }
+              ]
             }
           }
         }
@@ -91,7 +110,10 @@
         "reason": {
           "type": "string"
         },
-        "file_name": {
+        "file_path": {
+          "type": "string"
+        },
+        "flag_name": {
           "type": "string"
         }
       },

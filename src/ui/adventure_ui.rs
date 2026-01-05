@@ -3,7 +3,7 @@ use crate::games::adventure::Adventure;
 use ratatui::prelude::*;
 use ratatui::style::{Color, Style};
 use ratatui::text::Span;
-use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap};
 use ratatui_image::StatefulImage;
 
 struct ExtraColors {
@@ -44,12 +44,31 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
         .flat_map(|entry| {
             entry
                 .lines()
-                .map(|line| Line::raw(line.to_string()))
+                .map(|line| {
+                    if line.starts_with('>') {
+                        // Style the user input line
+                        Line::from(vec![
+                            Span::styled("> ", Style::default().fg(colors.suus_donker)),
+                            Span::styled(
+                                line[1..].to_string(), // The text after the '>'
+                                Style::default().fg(colors.suus_rose).bold(),
+                            ),
+                        ])
+                    } else {
+                        // Standard style for game text
+                        Line::styled(
+                            line.to_string(),
+                            Style::default().fg(Color::Rgb(186, 225, 255)),
+                        )
+                    }
+                })
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 
     let mut log_with_padding = log_text;
+    log_with_padding.push(Line::raw(""));
+    log_with_padding.push(Line::raw(""));
     log_with_padding.push(Line::raw(""));
     log_with_padding.push(Line::raw(""));
 
@@ -100,7 +119,8 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Inventory").fg(colors.suus_donker_rose)
+                .title("Inventory")
+                .fg(colors.suus_donker_rose)
                 .bold(),
         )
         .wrap(Wrap { trim: false });
@@ -117,7 +137,13 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
             frame.render_stateful_widget(image, right_split[1], &mut *protocol);
         } else {
             let scene_text = Paragraph::new(scene.scene_art.clone())
-                .block(Block::default().borders(Borders::ALL).title("Scene").fg(colors.suus_blauw).bold())
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Scene")
+                        .fg(colors.suus_blauw)
+                        .bold(),
+                )
                 .wrap(Wrap { trim: true });
 
             frame.render_widget(scene_text, right_split[1]);
@@ -129,14 +155,59 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
         game.stats.moves_done
     ))];
 
-    let stats_widget = Paragraph::new(stats_lines)
-        .block(Block::default().borders(Borders::ALL).title("Stats").fg(colors.suus_licht).bold());
+    let stats_widget = Paragraph::new(stats_lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Stats")
+            .fg(colors.suus_licht)
+            .bold(),
+    );
 
     frame.render_widget(stats_widget, right_split[2]);
 
-    // === Bottom Input Line with autocomplete ===
-    let input_widget = render_input_line(game);
-    frame.render_widget(input_widget, main_layout[1]);
+    // === Bottom Input Line ===
+    // If audio is playing, show a placeholder instead of the input box
+    if game.is_playing_audio {
+        let playing_widget = Paragraph::new(Line::from(vec![
+            Span::styled(
+                " 🎵 Playing audio... ",
+                Style::default().fg(colors.suus_blauw).bold(),
+            ),
+            Span::styled("(Please wait)", Style::default().fg(colors.suus_donker)),
+        ]))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Status")
+                .border_style(Style::default().fg(colors.suus_rose)),
+        )
+        .alignment(Alignment::Center);
+
+        frame.render_widget(playing_widget, main_layout[1]);
+    } else {
+        let input_widget = render_input_line(game);
+        frame.render_widget(input_widget, main_layout[1]);
+    }
+
+    // === Optional: Overlay / Modal ===
+    // If you want a pop-up in the middle of the screen instead:
+    if game.is_playing_audio {
+        let block = Block::default()
+            .title(" Audio ")
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .fg(colors.suus_rose);
+
+        // Helper to create a centered Rect
+        let popup_area = centered_rect(30, 10, area);
+        frame.render_widget(Clear, popup_area); // Clears the background
+        frame.render_widget(
+            Paragraph::new("Playing sound...")
+                .block(block)
+                .alignment(Alignment::Center),
+            popup_area,
+        );
+    }
 }
 
 fn render_input_line(game: &Adventure) -> Paragraph<'_> {
@@ -165,8 +236,30 @@ fn render_input_line(game: &Adventure) -> Paragraph<'_> {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Command").fg(colors.suus_rose)
+                .title("Command")
+                .fg(colors.suus_rose)
                 .bold(),
         )
         .wrap(Wrap { trim: false })
+}
+
+/// helper function to create a centered rect using up certain % of the available rect `r`
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
 }

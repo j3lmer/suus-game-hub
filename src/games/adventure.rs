@@ -10,9 +10,9 @@ use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use rodio::{Decoder, OutputStreamBuilder, Sink};
 use std::fs::File;
 use std::io::BufReader;
-use rodio::{Decoder, OutputStream, source::Source};
 
 #[derive(Deserialize, Clone)]
 pub struct CommandAction {
@@ -20,7 +20,12 @@ pub struct CommandAction {
     pub text: Option<String>,
     pub target: Option<String>,
     pub reason: Option<String>,
-    pub file_name: Option<String>,
+    pub file_path: Option<String>,
+    pub set_flag: Option<String>,
+    pub requires_flag: Option<String>,
+    pub requires_all: Option<Vec<String>>,
+    pub actions: Option<Vec<CommandAction>>,
+    pub else_actions: Option<Vec<CommandAction>>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -30,6 +35,7 @@ pub enum CommandJson {
     Wrapped {
         once: Option<bool>,
         actions: Vec<CommandAction>,
+        fallback: Option<Vec<CommandAction>>,
     },
 }
 
@@ -45,6 +51,7 @@ pub struct SceneJson {
 #[derive(Deserialize)]
 pub struct AdventureJsonRoot {
     pub scenes: Vec<SceneJson>,
+    pub global_commands: HashMap<String, CommandJson>,
 }
 
 pub struct Scene {
@@ -61,9 +68,14 @@ pub struct AdventureStats {
 pub struct Adventure {
     scenes: HashMap<String, Scene>,
     current_scene: String,
-
+    global_commands: HashMap<String, CommandJson>,
     log: Vec<String>,
+
     pub input_buffer: String,
+
+    pub flags: HashMap<String, bool>,
+
+    pub is_playing_audio: bool,
 
     pub autocomplete_matches: Vec<String>,
     pub autocomplete_index: usize,
@@ -74,6 +86,11 @@ pub struct Adventure {
     pub art_shown: bool,
 
     pub stats: AdventureStats,
+}
+
+enum CommandSource {
+    Scene,
+    Global,
 }
 
 impl Adventure {
@@ -122,6 +139,9 @@ impl Adventure {
             auto_scroll: true,
             art_shown: false,
             stats: AdventureStats { moves_done: 0 },
+            global_commands: root.global_commands,
+            is_playing_audio: false,
+            flags: HashMap::new(),
         }
     }
 
@@ -135,6 +155,7 @@ impl Adventure {
         self.log_scroll = 0;
         self.auto_scroll = true;
         self.stats.moves_done = 0;
+        self.flags.clear();
 
         let first = &self.scenes[&first_scene_id];
 
@@ -151,8 +172,17 @@ impl Adventure {
     }
 
     fn all_commands(&self) -> Vec<String> {
-        let scene = &self.scenes[&self.current_scene];
-        scene.commands.keys().cloned().collect()
+        let mut cmds: Vec<String> = self.scenes[&self.current_scene]
+            .commands
+            .keys()
+            .cloned()
+            .collect();
+
+        cmds.extend(self.global_commands.keys().cloned());
+
+        cmds.sort();
+        cmds.dedup();
+        cmds
     }
 
     pub fn update_autocomplete(&mut self) {
@@ -162,10 +192,13 @@ impl Adventure {
             .into_iter()
             .filter(|cmd| cmd.starts_with(&input))
             .collect();
+
+        // TODO: merge with global commands
         self.autocomplete_index = 0;
     }
 
     pub fn autocomplete_suggestion(&self) -> Option<&str> {
+        // TODO: merge with global commands
         self.autocomplete_matches
             .get(self.autocomplete_index)
             .map(|s| s.as_str())
@@ -173,26 +206,73 @@ impl Adventure {
 
     fn run_actions(&mut self, actions: &[CommandAction]) {
         for cmd in actions {
+            if let Some(req) = &cmd.requires_flag {
+                if !self.flags.get(req).cloned().unwrap_or(false) {
+                    // If the requirement isn't met, skip THIS action
+                    // (Optional: log a message saying "I can't do that yet")
+
+                    continue;
+                }
+            }
+
             match cmd.action.as_str() {
+                "check_logic" => {
+                    if let Some(reqs) = &cmd.requires_all {
+                        if self.check_flags(reqs) {
+                            // Success: Run the nested 'actions'
+                            if let Some(success_branch) = &cmd.actions {
+                                self.run_actions(success_branch);
+                            }
+                        } else {
+                            // Failure: Run 'else_actions'
+                            if let Some(fail_branch) = &cmd.else_actions {
+                                self.run_actions(fail_branch);
+                            }
+                        }
+                    }
+                }
                 "log" => {
                     self.log.push(cmd.text.clone().unwrap_or_default());
                 }
+                "set_flag" => {
+                    if let Some(flag_name) = &cmd.set_flag {
+                        self.flags.insert(flag_name.clone(), true);
+                    }
+                }
                 "change_scene" => {
                     let target = cmd.target.as_ref().unwrap();
+
                     self.current_scene = target.clone();
+
                     let new_scene = self.scenes.get(target).unwrap();
+
                     self.log.push(new_scene.enter_text.clone());
-                }
-                "die" => {
-                    let reason = cmd.reason.clone().unwrap_or("You died".to_string());
-                    self.log.push(format!("GAME OVER: {}", reason));
                 }
                 "show_scene_art" => {
                     self.art_shown = true;
                 }
                 "sound" => {
-                    if let Some(file_path) = &cmd.file_name {
-                        Adventure::play_sound(file_path);
+                    if let Some(file_path) = &cmd.file_path {
+                        Adventure::play_sound(self, file_path);
+                    }
+                }
+                "die" => {
+                    let reason = cmd.reason.clone().unwrap_or("You died".to_string());
+                    self.log.push(format!("GAME OVER: {}", reason));
+                }
+                "check_logic" => {
+                    if let Some(reqs) = &cmd.requires_all {
+                        if self.check_flags(reqs) {
+                            // Success: Run the nested 'actions'
+                            if let Some(success_branch) = &cmd.actions {
+                                self.run_actions(success_branch);
+                            }
+                        } else {
+                            // Failure: Run 'else_actions'
+                            if let Some(fail_branch) = &cmd.else_actions {
+                                self.run_actions(fail_branch);
+                            }
+                        }
                     }
                 }
                 _ => self
@@ -204,55 +284,71 @@ impl Adventure {
         self.stats.moves_done += 1;
     }
 
-    fn play_sound(file_path: &str) {
-        // Get an output stream handle to the default physical sound device.
-        // Note that the playback stops when the stream_handle is dropped.
-        let mut stream_handle =
-            rodio::OutputStreamBuilder::open_default_stream().expect("open default audio stream");
+    pub fn check_flags(&self, requirements: &[String]) -> bool {
+        requirements
+            .iter()
+            .all(|flag| *self.flags.get(flag).unwrap_or(&false))
+    }
 
+    fn play_sound(&mut self, file_path: &str) {
+        self.is_playing_audio = true;
+
+        // We don't spawn a thread here because you want it to block
+        let mut stream_handle = match OutputStreamBuilder::open_default_stream() {
+            Ok(h) => h,
+            Err(_) => {
+                self.is_playing_audio = false;
+                return;
+            }
+        };
         stream_handle.log_on_drop(false);
 
-        // Load a sound from a file, using a path relative to Cargo.toml
-        let file = BufReader::new(File::open(file_path).unwrap());
+        let sink = Sink::connect_new(stream_handle.mixer());
+        let file = match File::open(file_path) {
+            Ok(f) => BufReader::new(f),
+            Err(_) => {
+                self.is_playing_audio = false;
+                return;
+            }
+        };
 
-        // Note that the playback stops when the sink is dropped
-        let sink = rodio::play(stream_handle.mixer(), file).unwrap();
+        if let Ok(source) = Decoder::try_from(file) {
+            sink.append(source);
+            // This blocks the thread
+            sink.sleep_until_end();
+        }
 
-        // The sound plays in a separate audio thread,
-        // so we need to keep the main thread alive while it's playing.
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        self.is_playing_audio = false;
     }
 
     fn process_command(&mut self, input: &str) {
         let input = input.trim().to_lowercase();
-        self.log.push(format!("> {}", input));
-
-        // STEP 1 — extract command info without keeping mutable borrow
-        let cmd = {
-            let scene = self.scenes.get_mut(&self.current_scene).unwrap();
-            scene.commands.get(&input).cloned()
-        };
-
-        // STEP 2 — handle extracted command
-        let mut remove_after = false;
-
-        match cmd {
-            Some(CommandJson::Simple(actions)) => {
-                self.run_actions(&actions);
-            }
-            Some(CommandJson::Wrapped { once, actions }) => {
-                self.run_actions(&actions);
-                remove_after = once.unwrap_or(false);
-            }
-            _ => {
-                self.log.push("ik wit net wat ik hjiermei mat".to_string());
-            }
+        if input.is_empty() {
+            return;
         }
 
-        // STEP 3 — optionally remove the command (new borrow allowed)
-        if remove_after {
-            if let Some(scene) = self.scenes.get_mut(&self.current_scene) {
-                scene.commands.remove(&input);
+        self.log.push(format!("> {}", input));
+
+        // 1. Try to get the command from the Scene first
+        let scene_cmd = self
+            .scenes
+            .get(&self.current_scene)
+            .and_then(|s| s.commands.get(&input).cloned());
+
+        if let Some(cmd_json) = scene_cmd {
+            // EXECUTE SCENE COMMAND
+            self.handle_command_json(&input, cmd_json, CommandSource::Scene);
+        } else {
+            // 2. Fallback: Try Global commands
+            let global_cmd = self.global_commands.get(&input).cloned();
+
+            if let Some(cmd_json) = global_cmd {
+                // EXECUTE GLOBAL COMMAND
+                self.handle_command_json(&input, cmd_json, CommandSource::Global);
+            } else {
+                // 3. Final Fallback: Error message
+                self.log
+                    .push("Ik weet niet wat ik hiermee moet.".to_string());
             }
         }
 
@@ -277,6 +373,51 @@ impl Adventure {
 
     pub fn total_log_lines(&self) -> usize {
         self.log.iter().map(|entry| entry.lines().count()).sum()
+    }
+
+    fn handle_command_json(&mut self, input: &str, cmd_json: CommandJson, source: CommandSource) {
+        match cmd_json {
+            CommandJson::Simple(actions) => {
+                self.run_actions(&actions);
+            }
+            CommandJson::Wrapped {
+                once,
+                actions,
+                fallback,
+            } => {
+                // Run the primary actions
+                self.run_actions(&actions);
+
+                // If it's a 'once' command, remove it or replace it with fallback
+                if once.unwrap_or(false) {
+                    let next_val = fallback.map(CommandJson::Simple);
+
+                    match (source, next_val) {
+                        // Replace with fallback actions if they exist, otherwise remove entirely
+                        (CommandSource::Scene, Some(fb)) => {
+                            self.scenes
+                                .get_mut(&self.current_scene)
+                                .unwrap()
+                                .commands
+                                .insert(input.to_string(), fb);
+                        }
+                        (CommandSource::Scene, None) => {
+                            self.scenes
+                                .get_mut(&self.current_scene)
+                                .unwrap()
+                                .commands
+                                .remove(input);
+                        }
+                        (CommandSource::Global, Some(fb)) => {
+                            self.global_commands.insert(input.to_string(), fb);
+                        }
+                        (CommandSource::Global, None) => {
+                            self.global_commands.remove(input);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

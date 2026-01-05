@@ -7,18 +7,6 @@
       "scene_art": "",
       "scene_image": "data/assets/bedje.jpg",
       "commands": {
-        "doe ogen open": {
-          "once": true,
-         "actions": [
-            {
-              "action": "show_scene_art"
-            },
-            {
-              "action": "log",
-              "text": "Ah, dat is beter."
-            }
-          ]
-        },
         "sta op": [
           {
             "action": "change_scene",
@@ -37,10 +25,14 @@
             "target": "bedroom_towards_closet"
           }
         ],
-        "doomscrollen": [
+        "zoek naar jelmer": [
           {
-            "action": "die",
-            "reason": "Instagram heeft je opgegeten."
+            "action": "log",
+            "text": "owwww jelmer is helemaal nergens te bekennen meer!"
+          },
+          {
+            "action": "set_flag",
+            "flag_name": "searched_bedroom"
           }
         ]
       }
@@ -51,6 +43,16 @@
       "scene_art": "",
       "scene_image": "data/assets/opgestaan.jpg",
       "commands": {
+        "zoek naar jelmer": [
+          {
+            "action": "log",
+            "text": "owwww jelmer is helemaal nergens te bekennen meer!"
+          },
+          {
+            "action": "set_flag",
+            "flag_name": "searched_bedroom"
+          }
+        ],
         "naar de hal": [
           {
             "action": "change_scene",
@@ -59,30 +61,329 @@
           {
             "action": "log",
             "text": "Je bent nu in de hal"
+          },
+          {
+            "action": "sound",
+            "file_path": "data/assets/audio/deur.mp3"
           }
         ]
       }
     },
     {
       "id": "hallway_towards_shower",
-      "scene_enter": "Je staat naast het bed...",
+      "scene_enter": "Je staat in de hal...",
       "scene_art": "",
       "scene_image": "data/assets/hal.jpg",
       "commands": {
-        "naar de wc": [
+        "naar de wc": {
+          "once": true,
+          "fallback": [
+            {
+              "action": "log",
+              "text": "auwie buikpijnpoep:("
+            },
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/deur.mp3"
+            },
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/auwie_buikpijnpoep.mp3"
+            }
+          ],
+          "actions": [
+            {
+              "action": "log",
+              "text": "OOAAA OOEEE HEALUK DIKKE BAMS OEEEEOOEOEOE pffrttttt..💩"
+            },
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/deur.mp3"
+            },
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/poopy.mp3"
+            }
+          ]
+        },
+        "zoek naar jelmer": [
           {
             "action": "log",
-            "text": "OOAAA OOEEE HEALUK DIKKE BAMS OEEEEOOEOEOE pffrttttt..💩"
+            "text": "hij is ook al niet in de hal!"
+          },
+          {
+            "action": "set_flag",
+            "flag_name": "searched_hallway"
+          }
+        ],
+        "naar beneden": [
+          {
+            "action": "change_scene",
+            "target": "towards_home_front_door_inside"
+          },
+          {
+            "action": "log",
+            "text": "Je kijkt naar je voordeur"
+          }
+        ],
+        "naar de woonkamer": [
+          {
+            "action": "change_scene",
+            "target": "towards_whiteboard_livingroom"
+          },
+          {
+            "action": "log",
+            "text": "Je stapt de woonkamer binnen"
           },
           {
             "action": "sound",
-            "file_name": "/home/j3lmer/projects/github/tui/rust/suus-game-hub/data/assets/audio/poopy.mp3"
+            "file_path": "data/assets/audio/deur.mp3"
           }
         ],
-        "naar de naar de badkamer": [],
-        "naar de naar de woonkamer": [],
-        "naar beneden": []
+        "naar de douche": [
+          {
+            "action": "change_scene",
+            "target": "inside_showerroom"
+          },
+          {
+            "action": "log",
+            "text": "Je stapt de douche binnen"
+          },
+          {
+            "action": "sound",
+            "file_path": "data/assets/audio/deur.mp3"
+          }
+        ]
       }
+    },
+    {
+      "id": "inside_showerroom",
+      "scene_enter": "",
+      "scene_art": "",
+      "scene_image": "data/assets/douche_isometric.png",
+      "commands": {
+        "poets je tanden": {
+          "once": true,
+          "fallback": [
+            {
+              "action": "log",
+              "text": "Je hebt je tanden al gepoetst zonet"
+            }
+          ],
+          "actions": [
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/brush-teeth.mp3"
+            },
+            {
+              "action": "log",
+              "target": "Je poetst je tanden... saaai..."
+            }
+          ]
+        },
+        "neem een douch": {
+          "once": true,
+          "fallback": [
+            {
+              "action": "log",
+              "text": "je hebt al een douche genomen"
+            }
+          ],
+          "actions": [
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/shower.mp3"
+            },
+            {
+              "action": "log",
+              "target": "pipi lekker in de water"
+            }
+          ]
+        },
+        "terug naar de hal": [
+          {
+            "action": "change_scene",
+            "target": "hallway_towards_bedroom"
+          },
+          {
+            "action": "sound",
+            "file_path": "data/assets/audio/deur.mp3"
+          }
+        ],
+        "zoek naar jelmer": [
+          {
+            "action": "log",
+            "text": "en niet in de badkamer!"
+          },
+          {
+            "action": "set_flag",
+            "flag_name": "searched_bathroom"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hallway_towards_bedroom",
+      "scene_enter": "je staat weer in de hal",
+      "scene_art": "",
+      "scene_image": "data/assets/hallway_towards_bedroom.png",
+      "commands": {
+        "naar de wc": {
+          "once": true,
+          "fallback": [
+            {
+              "action": "log",
+              "text": "auwie buikpijnpoep:("
+            },
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/auwie_buikpijnpoep.mp3"
+            }
+          ],
+          "actions": [
+            {
+              "action": "log",
+              "text": "OOAAA OOEEE HEALUK DIKKE BAMS OEEEEOOEOEOE pffrttttt..💩"
+            },
+            {
+              "action": "sound",
+              "file_path": "data/assets/audio/poopy.mp3"
+            }
+          ]
+        },
+        "zoek naar jelmer": [
+          {
+            "action": "log",
+            "text": "hij is ook al niet in de hal!"
+          },
+          {
+            "action": "set_flag",
+            "flag_name": "searched_hallway"
+          }
+        ],
+        "naar beneden": [
+          {
+            "action": "change_scene",
+            "target": "towards_home_front_door_inside"
+          },
+          {
+            "action": "log",
+            "text": "Je kijkt naar je voordeur"
+          }
+        ],
+        "naar de woonkamer": [
+          {
+            "action": "change_scene",
+            "target": "towards_whiteboard_livingroom"
+          },
+          {
+            "action": "log",
+            "text": "Je stapt de woonkamer binnen"
+          }
+        ],
+        "naar de douche": [
+          {
+            "action": "change_scene",
+            "target": "inside_showerroom"
+          },
+          {
+            "action": "log",
+            "text": "Je stapt de douche binnen"
+          },
+          {
+            "action": "sound",
+            "file_path": "data/assets/audio/deur.mp3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "towards_whiteboard_livingroom",
+      "scene_enter": "",
+      "scene_art": "",
+      "scene_image": "data/assets/woonkamer_whiteboard.png",
+      "commands": {
+        "zoek naar jelmer": [
+          {
+            "action": "log",
+            "text": "owwww jelmer is helemaal nergens te bekennen meer!"
+          },
+          {
+            "action": "set_flag",
+            "flag_name": "searched_livingroom"
+          }
+        ],
+        "terug naar de hal": [
+          {
+            "action": "change_scene",
+            "target": "towards_whiteboard_livingroom"
+          }
+        ]
+      }
+    },
+    {
+      "id": "towards_home_front_door_inside",
+      "scene_enter": "",
+      "scene_art": "",
+      "scene_image": "data/assets/binnen_naar_voordeur_trap.png",
+      "commands": {}
     }
-  ]
+  ],
+  "global_commands": {
+    "doe ogen open": {
+      "once": true,
+      "actions": [
+        {
+          "action": "show_scene_art"
+        },
+        {
+          "action": "log",
+          "text": "Ah, dat is beter."
+        }
+      ]
+    },
+    "doomscrollen": [
+      {
+        "action": "die",
+        "reason": "Instagram heeft je opgegeten."
+      }
+    ],
+    "zoek naar jelmer": [
+      {
+        "action": "log",
+        "text": "Jelmer is hier niet... :("
+      }
+    ],
+    "bel jelmer": [
+      {
+        "action": "check_logic",
+        "requires_all": [
+          "searched_bedroom",
+          "searched_livingroom",
+          "searched_hallway",
+          "searched_bathroom"
+        ],
+        "actions": [
+          {
+            "action": "sound",
+            "file_path": "data/assets/audio/phone_ring.mp3"
+          },
+          {
+            "action": "log",
+            "text": "📞 Jelmer neemt op! 'Yo, wat is er?'"
+          },
+          {
+            "action": "change_scene",
+            "target": "victory_scene"
+          }
+        ],
+        "else_actions": [
+          {
+            "action": "log",
+            "text": "Je grijpt naar je telefoon, maar je twijfelt... heb je wel overal gezocht?"
+          }
+        ]
+      }
+    ]
+  }
 }
