@@ -1,5 +1,5 @@
 use crate::games::adventure::Adventure;
-use crossterm::terminal::window_size;
+
 use ratatui::prelude::*;
 use ratatui::style::{Color, Style};
 use ratatui::text::Span;

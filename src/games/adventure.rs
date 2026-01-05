@@ -10,12 +10,17 @@ use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use std::fs::File;
+use std::io::BufReader;
+use rodio::{Decoder, OutputStream, source::Source};
+
 #[derive(Deserialize, Clone)]
 pub struct CommandAction {
     pub action: String,
     pub text: Option<String>,
     pub target: Option<String>,
     pub reason: Option<String>,
+    pub file_name: Option<String>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -167,23 +172,28 @@ impl Adventure {
     }
 
     fn run_actions(&mut self, actions: &[CommandAction]) {
-        for action in actions {
-            match action.action.as_str() {
+        for cmd in actions {
+            match cmd.action.as_str() {
                 "log" => {
-                    self.log.push(action.text.clone().unwrap_or_default());
+                    self.log.push(cmd.text.clone().unwrap_or_default());
                 }
                 "change_scene" => {
-                    let target = action.target.as_ref().unwrap();
+                    let target = cmd.target.as_ref().unwrap();
                     self.current_scene = target.clone();
                     let new_scene = self.scenes.get(target).unwrap();
                     self.log.push(new_scene.enter_text.clone());
                 }
                 "die" => {
-                    let reason = action.reason.clone().unwrap_or("You died".to_string());
+                    let reason = cmd.reason.clone().unwrap_or("You died".to_string());
                     self.log.push(format!("GAME OVER: {}", reason));
                 }
                 "show_scene_art" => {
                     self.art_shown = true;
+                }
+                "sound" => {
+                    if let Some(file_path) = &cmd.file_name {
+                        Adventure::play_sound(file_path);
+                    }
                 }
                 _ => self
                     .log
@@ -192,6 +202,25 @@ impl Adventure {
         }
 
         self.stats.moves_done += 1;
+    }
+
+    fn play_sound(file_path: &str) {
+        // Get an output stream handle to the default physical sound device.
+        // Note that the playback stops when the stream_handle is dropped.
+        let mut stream_handle =
+            rodio::OutputStreamBuilder::open_default_stream().expect("open default audio stream");
+
+        stream_handle.log_on_drop(false);
+
+        // Load a sound from a file, using a path relative to Cargo.toml
+        let file = BufReader::new(File::open(file_path).unwrap());
+
+        // Note that the playback stops when the sink is dropped
+        let sink = rodio::play(stream_handle.mixer(), file).unwrap();
+
+        // The sound plays in a separate audio thread,
+        // so we need to keep the main thread alive while it's playing.
+        std::thread::sleep(std::time::Duration::from_secs(1));
     }
 
     fn process_command(&mut self, input: &str) {

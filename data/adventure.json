@@ -73,6 +73,10 @@
           {
             "action": "log",
             "text": "OOAAA OOEEE HEALUK DIKKE BAMS OEEEEOOEOEOE pffrttttt..💩"
+          },
+          {
+            "action": "sound",
+            "file_name": "/home/j3lmer/projects/github/tui/rust/suus-game-hub/data/assets/audio/poopy.mp3"
           }
         ],
         "naar de naar de badkamer": [],
