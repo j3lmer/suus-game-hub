@@ -1,11 +1,32 @@
 use crate::games::adventure::Adventure;
+use crossterm::terminal::window_size;
 use ratatui::prelude::*;
 use ratatui::style::{Color, Style};
 use ratatui::text::Span;
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use ratatui_image::StatefulImage;
 
+struct ExtraColors {
+    suus_blauw: Color,
+    suus_donker: Color,
+    suus_licht: Color,
+    suus_rose: Color,
+    suus_donker_rose: Color,
+}
+
+fn get_colors() -> ExtraColors {
+    ExtraColors {
+        suus_blauw: Color::Rgb(186, 225, 255),
+        suus_donker: Color::Rgb(56, 73, 85),
+        suus_licht: Color::Rgb(156, 174, 188),
+        suus_rose: Color::Rgb(228, 187, 210),
+        suus_donker_rose: Color::Rgb(173, 133, 156),
+    }
+}
+
 pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
+    let colors = get_colors();
+
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(3), Constraint::Length(3)])
@@ -45,7 +66,15 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
     };
 
     let log_widget = Paragraph::new(log_with_padding)
-        .block(Block::default().borders(Borders::ALL).title("Log"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Log")
+                .fg(colors.suus_blauw)
+                .bold(),
+        )
+        // .fg(Color::LightMagenta)
+        .fg(Color::Rgb(186, 225, 255))
         .wrap(Wrap { trim: false })
         .scroll((scroll_offset as u16, 0));
 
@@ -68,7 +97,12 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
         .collect::<Vec<_>>();
 
     let inventory_widget = Paragraph::new(inventory_items)
-        .block(Block::default().borders(Borders::ALL).title("Inventory"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Inventory").fg(colors.suus_donker_rose)
+                .bold(),
+        )
         .wrap(Wrap { trim: false });
 
     frame.render_widget(inventory_widget, right_split[0]);
@@ -83,7 +117,7 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
             frame.render_stateful_widget(image, right_split[1], &mut *protocol);
         } else {
             let scene_text = Paragraph::new(scene.scene_art.clone())
-                .block(Block::default().borders(Borders::ALL).title("Scene"))
+                .block(Block::default().borders(Borders::ALL).title("Scene").fg(colors.suus_blauw).bold())
                 .wrap(Wrap { trim: true });
 
             frame.render_widget(scene_text, right_split[1]);
@@ -95,8 +129,8 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
         game.stats.moves_done
     ))];
 
-    let stats_widget =
-        Paragraph::new(stats_lines).block(Block::default().borders(Borders::ALL).title("Stats"));
+    let stats_widget = Paragraph::new(stats_lines)
+        .block(Block::default().borders(Borders::ALL).title("Stats").fg(colors.suus_licht).bold());
 
     frame.render_widget(stats_widget, right_split[2]);
 
@@ -107,6 +141,7 @@ pub fn render_adventure_game(game: &Adventure, frame: &mut Frame, area: Rect) {
 
 fn render_input_line(game: &Adventure) -> Paragraph<'_> {
     let input = game.input().to_string();
+    let colors = get_colors();
     let spans: Vec<Span> = if let Some(suggestion) = game.autocomplete_suggestion() {
         if suggestion.starts_with(&input) {
             let typed_len = input.len();
@@ -116,7 +151,7 @@ fn render_input_line(game: &Adventure) -> Paragraph<'_> {
                 Span::raw(typed_part.to_string()),
                 Span::styled(
                     suggested_part.to_string(),
-                    Style::default().fg(Color::DarkGray),
+                    Style::default().fg(colors.suus_donker),
                 ),
             ]
         } else {
@@ -127,6 +162,11 @@ fn render_input_line(game: &Adventure) -> Paragraph<'_> {
     };
 
     Paragraph::new(Line::from(spans))
-        .block(Block::default().borders(Borders::ALL).title("Command"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Command").fg(colors.suus_rose)
+                .bold(),
+        )
         .wrap(Wrap { trim: false })
 }
