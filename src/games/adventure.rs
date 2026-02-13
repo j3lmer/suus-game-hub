@@ -21,7 +21,7 @@ pub struct CommandAction {
     pub target: Option<String>,
     pub reason: Option<String>,
     pub file_path: Option<String>,
-    pub set_flag: Option<String>,
+    pub flag_name: Option<String>,
     pub requires_flag: Option<String>,
     pub requires_all: Option<Vec<String>>,
     pub actions: Option<Vec<CommandAction>>,
@@ -235,7 +235,7 @@ impl Adventure {
                     self.log.push(cmd.text.clone().unwrap_or_default());
                 }
                 "set_flag" => {
-                    if let Some(flag_name) = &cmd.set_flag {
+                    if let Some(flag_name) = &cmd.flag_name {
                         self.flags.insert(flag_name.clone(), true);
                     }
                 }

@@ -316,7 +316,7 @@
         "terug naar de hal": [
           {
             "action": "change_scene",
-            "target": "towards_whiteboard_livingroom"
+            "target": "hallway_towards_shower"
           }
         ]
       }
@@ -326,9 +326,25 @@
       "scene_enter": "",
       "scene_art": "",
       "scene_image": "data/assets/binnen_naar_voordeur_trap.png",
+      "commands": {
+        "terug naar de hal": [
+          {
+            "action": "change_scene",
+            "target": "hallway_towards_shower"
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "victory_scene",
+      "scene_enter": "",
+      "scene_art": "",
+      "scene_image": "",
       "commands": {}
     }
   ],
+
   "global_commands": {
     "doe ogen open": {
       "once": true,
@@ -348,12 +364,6 @@
         "reason": "Instagram heeft je opgegeten."
       }
     ],
-    "zoek naar jelmer": [
-      {
-        "action": "log",
-        "text": "Jelmer is hier niet... :("
-      }
-    ],
     "bel jelmer": [
       {
         "action": "check_logic",
@@ -370,7 +380,7 @@
           },
           {
             "action": "log",
-            "text": "📞 Jelmer neemt op! 'Yo, wat is er?'"
+            "text": "📞 Jelmer neemt op! 'ahoiii! wassappp?'"
           },
           {
             "action": "change_scene",
