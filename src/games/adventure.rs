@@ -260,21 +260,21 @@ impl Adventure {
                     let reason = cmd.reason.clone().unwrap_or("You died".to_string());
                     self.log.push(format!("GAME OVER: {}", reason));
                 }
-                "check_logic" => {
-                    if let Some(reqs) = &cmd.requires_all {
-                        if self.check_flags(reqs) {
-                            // Success: Run the nested 'actions'
-                            if let Some(success_branch) = &cmd.actions {
-                                self.run_actions(success_branch);
-                            }
-                        } else {
-                            // Failure: Run 'else_actions'
-                            if let Some(fail_branch) = &cmd.else_actions {
-                                self.run_actions(fail_branch);
-                            }
-                        }
-                    }
-                }
+                // "check_logic" => {
+                //     if let Some(reqs) = &cmd.requires_all {
+                //         if self.check_flags(reqs) {
+                //             // Success: Run the nested 'actions'
+                //             if let Some(success_branch) = &cmd.actions {
+                //                 self.run_actions(success_branch);
+                //             }
+                //         } else {
+                //             // Failure: Run 'else_actions'
+                //             if let Some(fail_branch) = &cmd.else_actions {
+                //                 self.run_actions(fail_branch);
+                //             }
+                //         }
+                //     }
+                // }
                 _ => self
                     .log
                     .push("Ik weet niet wat ik hiermee moet..".to_string()),

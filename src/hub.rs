@@ -1,7 +1,7 @@
 use crate::games::{
     adventure::Adventure,
     hangman::HangmanGame,
-    // snake::SnakeGame,
+    snake::SnakeGame,
     // twozerofoureight::Game2048,
     Game,
     GameType,
@@ -32,7 +32,7 @@ impl GameHub {
             current_screen: Screen::Dashboard,
             selected_game_index: 0,
             current_game: None,
-            available_games: vec![GameType::Hangman, GameType::Adventure],
+            available_games: vec![GameType::Hangman, GameType::Adventure, GameType::Snake],
         }
     }
 
@@ -51,11 +51,11 @@ impl GameHub {
                 game
             }
 
-            // GameType::Snake => {
-            //     let mut game = Box::new(SnakeGame::new());
-            //     game.restart();
-            //     game
-            // }
+            GameType::Snake => {
+                let mut game = Box::new(SnakeGame::new());
+                game.restart();
+                game
+            }
             // GameType::Game2048 => {
             //     let mut game = Box::new(Game2048::new());
             //     game.restart();

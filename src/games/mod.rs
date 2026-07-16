@@ -1,17 +1,15 @@
+pub mod adventure;
 pub mod hangman;
 pub mod snake;
 pub mod twozerofoureight;
-pub mod adventure;
-
 
 use ratatui::crossterm::event::KeyCode;
-use ratatui::{Frame, layout::Rect};
-// use twozerofoureight::Game2048;
+use ratatui::{layout::Rect, Frame};
 
 #[derive(Clone)]
 pub enum GameType {
     Hangman,
-    // Snake,
+    Snake,
     // Game2048,
     Adventure,
 }
@@ -20,7 +18,7 @@ impl GameType {
     pub fn name(&self) -> &str {
         match self {
             GameType::Hangman => "Galgje",
-            // GameType::Snake => "Snake",
+            GameType::Snake => "Snake",
             // GameType::Game2048 => "2048",
             GameType::Adventure => "Pipis avontuurtje!",
         }
